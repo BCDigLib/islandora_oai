@@ -43,6 +43,17 @@ function islandora_oai_install() {
       'record_namespace' => 'http://www.loc.gov/mods/v3',
     ))
     ->execute();
+
+  db_insert('islandora_oai_metadata_formats')
+    ->fields(array(
+      'name' => 'marc21',
+      'metadata_prefix' => 'marc21',
+      'oai2_schema' => 'http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd',
+      'metadata_namespace' => 'http://www.loc.gov/MARC21/slim',
+      'record_prefix' => 'marc',
+      'record_namespace' => 'http://www.loc.gov/MARC21/slim',
+    ))
+    ->execute();
 }
 
 /**
