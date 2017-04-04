@@ -71,6 +71,42 @@ function islandora_oai_admin_form($form, $form_state) {
     '#default_value' => variable_get('islandora_oai_expire_time', '86400'),
     '#description' => t('The amount of time a resumption token will remain valid, in seconds. Defaults to one day (86400s).'),
   );
+  $form['islandora_oai_configuration']['islandora_oai_query_backend'] = array(
+    '#type' => 'radios',
+    '#title' => t('Query Backend'),
+    '#default_value' => variable_get('islandora_oai_query_backend', 'sparql'),
+    '#description' => t('For larger repositories, OAI may perform poorly when attempting to perform the SPARQL queries it requires. In these cases, using the Solr backend may provide better results.'),
+    '#options' => array(
+      'sparql' => t('SPARQL'),
+      'solr' => t('Solr'),
+    ),
+  );
+  $solr_config_states = array(
+    'visible' => array(
+      ':input[name="islandora_oai_configuration[islandora_oai_query_backend]"]' => array('value' => 'solr'),
+    ),
+  );
+  $form['islandora_oai_configuration']['islandora_oai_solr_state_field'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr Object State Field'),
+    '#default_value' => variable_get('islandora_oai_solr_state_field', 'fgs_state_s'),
+    '#description' => t("The field in Solr that holds a Fedora object's state ('Active', 'Inactive', or 'Deleted')."),
+    '#states' => $solr_config_states,
+  );
+  $form['islandora_oai_configuration']['islandora_oai_solr_collection_description_field'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr Collection Description Field'),
+    '#default_value' => variable_get('islandora_oai_solr_collection_description_field', 'dc.description'),
+    '#description' => t('The field in Solr to use for collection descriptions.'),
+    '#states' => $solr_config_states,
+  );
+  $form['islandora_oai_configuration']['islandora_oai_solr_object_ancestors_field'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr Object Ancestors Field'),
+    '#default_value' => variable_get('islandora_oai_solr_object_ancestors_field', ''),
+    '#description' => t("A multivalued string The field in Solr that defines an object's ancestors. If left blank, Solr will recurse manually to get the child tree of a particular set. Use of this field may return a different set of children than the recursive option; it is the responsibility of the implementer to ensure the ancestors field returns an appropriate hierarchy of parents."),
+    '#states' => $solr_config_states,
+  );
 
   // Build up the available request handlers.
   $defined_handlers = module_invoke_all(ISLANDORA_OAI_REQUEST_HANDLER_HOOK);
@@ -135,6 +171,10 @@ function islandora_oai_admin_form_submit($form, $form_state) {
   variable_set('islandora_oai_max_size', $form_state['values']['islandora_oai_configuration']['islandora_oai_max_size']);
   variable_set('islandora_oai_expire_time', $form_state['values']['islandora_oai_configuration']['islandora_oai_expire_time']);
   variable_set('islandora_oai_request_handler', $form_state['values']['islandora_oai_configuration']['handlers']['default']);
+  variable_set('islandora_oai_query_backend', $form_state['values']['islandora_oai_configuration']['islandora_oai_query_backend']);
+  variable_set('islandora_oai_solr_state_field', $form_state['values']['islandora_oai_configuration']['islandora_oai_solr_state_field']);
+  variable_set('islandora_oai_solr_collection_description_field', $form_state['values']['islandora_oai_configuration']['islandora_oai_solr_collection_description_field']);
+  variable_set('islandora_oai_solr_object_ancestors_field', $form_state['values']['islandora_oai_configuration']['islandora_oai_solr_object_ancestors_field']);
   // Because of the dynamic pathing of the OAI path we need to rebuild the
   // menus.
   menu_rebuild();

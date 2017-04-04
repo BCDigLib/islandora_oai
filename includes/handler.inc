@@ -24,36 +24,82 @@
  * @see hook_islandora_oai_identify_request_handler()
  */
 function islandora_oai_retrieve_sets($params) {
-  $connection = islandora_get_tuque_connection();
-  $records = array();
-  $filters = array('sameTerm(?model, <info:fedora/islandora:collectionCModel>)');
-  $sparql_query = islandora_oai_construct_sparql_query_for_sets($filters);
-  $total_records = $connection->repository->ri->countQuery($sparql_query, 'sparql');
-  $sparql_query .= <<<EOQ
-  LIMIT {$params['max_records']}
-  OFFSET {$params['token']->deliveredrecords}
+  switch (variable_get('islandora_oai_query_backend', 'sparql')) {
+    case 'sparql':
+      $connection = islandora_get_tuque_connection();
+      $records = array();
+      $filters = array('sameTerm(?model, <info:fedora/islandora:collectionCModel>)');
+      $sparql_query = islandora_oai_construct_sparql_query_for_sets($filters);
+      $total_records = $connection->repository->ri->countQuery($sparql_query, 'sparql');
+      $sparql_query .= <<<EOQ
+
+LIMIT {$params['max_records']}
+OFFSET {$params['token']->deliveredrecords}
 EOQ;
-  $query_results = $connection->repository->ri->sparqlQuery($sparql_query);
-  module_load_include('inc', 'islandora', 'includes/dublin_core');
-  foreach ($query_results as $result) {
-    $object = islandora_object_load($result['object']['value']);
-    $description = FALSE;
-    if (isset($object['DC'])) {
-      $description = $object['DC']->content;
-    }
-    $pid = $result['object']['value'];
-    $records[$pid] = array(
-      'pid' => $pid,
-      'label' => $result['title']['value'],
-    );
-    if ($description) {
-      $records[$pid]['description'] = $description;
-    }
+      $query_results = $connection->repository->ri->sparqlQuery($sparql_query);
+      foreach ($query_results as $result) {
+        $object = islandora_object_load($result['object']['value']);
+        $description = FALSE;
+        if (isset($object['DC'])) {
+          $description = islandora_oai_get_set_dc_portion($object['DC']);
+        }
+        $pid = $result['object']['value'];
+        $records[$pid] = array(
+          'pid' => $pid,
+          'label' => $result['title']['value'],
+        );
+        if ($description) {
+          $records[$pid]['description'] = $description;
+        }
+      }
+      break;
+
+    case 'solr':
+      $qp = new IslandoraSolrQueryProcessor();
+      $label_field = variable_get('islandora_solr_object_label_field', 'fgs_label_s');
+      $solr_params = array(
+        'limit' => $params['max_records'],
+        'sort' => $label_field,
+      );
+      $qp->buildQuery(format_string('!field:"info:fedora/islandora:collectionCModel"', array(
+        '!field' => variable_get('islandora_solr_content_model_field', 'RELS_EXT_hasModel_uri_ms'),
+      )), $solr_params);
+      $qp->solrStart = $params['token']->deliveredrecords;
+      $qp->executeQuery(FALSE);
+      $total_records = $qp->islandoraSolrResult['response']['numFound'];
+      $records = array();
+      $datastreams_field = variable_get('islandora_solr_datastream_id_field', 'fedora_datastreams_ms');
+      foreach ($qp->islandoraSolrResult['response']['objects'] as $object) {
+        $records[$object['PID']] = array(
+          'pid' => $object['PID'],
+          'label' => $object['solr_doc'][$label_field],
+        );
+        if (isset($object['solr_doc'][$datastreams_field]) && in_array('DC', $object['solr_doc'][$datastreams_field])) {
+          $loaded_object = islandora_object_load($object['PID']);
+          $records[$object['PID']]['description'] = islandora_oai_get_set_dc_portion($loaded_object['DC']);
+        }
+      }
+      break;
   }
   return array(
     'total_records' => $total_records,
     'records' => $records,
   );
+}
+
+/**
+ * Gets the DC portion of a set.
+ *
+ * @param AbstractDatastream $dc
+ *   The DC XML datastream.
+ *
+ * @return string
+ *   The XML to add to the set info.
+ */
+function islandora_oai_get_set_dc_portion(AbstractDatastream $dc) {
+  $dom = new DOMDocument();
+  $dom->loadXML($dc->content);
+  return $dom->saveXML($dom->documentElement);
 }
 
 /**
@@ -104,7 +150,7 @@ function islandora_oai_object_response_xml($params) {
     $file = variable_get("islandora_oai_transform_file_{$params['metadata_prefix']}", 'default');
     if ($file != 'default') {
       $xsl->load($file);
-      $input = new DomDocument();
+      $input = new DOMDocument();
 
       $did_load_ok = $input->loadXML($content);
 
@@ -116,8 +162,9 @@ function islandora_oai_object_response_xml($params) {
     else {
       // Need to potentially remove the header information from the XML as
       // the response is embedded within XML.
-      $content = str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $content);
-      $oai_output = $content;
+      $document_dom = new DOMDocument();
+      $document_dom->loadXML($content);
+      $oai_output = $document_dom->saveXML($document_dom->documentElement);
     }
   }
   // Jam the dc.identifier.thumbnail into the OAI_DC output.
@@ -388,7 +435,7 @@ function islandora_oai_datetime_to_solr_time($datetime, $until = FALSE) {
  * @param string $query
  *   Query string to search for.
  * @param bool $set
- *   Whether we are querying down for a set which requires walking in ITQL land.
+ *   Whether we are recursively querying through a set.
  * @param bool $date_query
  *   Whether this is a date query or not.
  *
@@ -396,8 +443,6 @@ function islandora_oai_datetime_to_solr_time($datetime, $until = FALSE) {
  *   The results generated from the crafted Solr query.
  */
 function islandora_oai_query_solr($start = 0, $field = 'PID', $query = NULL, $set = NULL, $date_query = NULL) {
-  global $user;
-
   $query_processor = new IslandoraSolrQueryProcessor();
 
   // Build the query string.
@@ -405,20 +450,21 @@ function islandora_oai_query_solr($start = 0, $field = 'PID', $query = NULL, $se
     $query = '*:*';
   }
   else {
-    $query = $field . ':' . Apache_Solr_Service::escape($query);
+    module_load_include('inc', 'islandora_solr', 'includes/utilities');
+    $query = $field . ':' . islandora_solr_lesser_escape($query);
   }
-
   $query_processor->buildQuery($query);
 
+  // Build the fields to return.
   $fl_fields = islandora_oai_get_membership_array();
   $fl_fields[] = 'PID';
   $fl_fields[] = variable_get('islandora_oai_date_field', 'fgs_lastModifiedDate_dt');
   $query_processor->solrParams['fl'] = implode(',', $fl_fields);
 
+  // Build the filter array.
   if ($date_query) {
     $query_processor->solrParams['fq'][] = $date_query;
   }
-
   $exclude_content_models = islandora_oai_get_restricted_models();
   $has_model = variable_get('islandora_oai_content_model_field', 'RELS_EXT_hasModel_uri_ms');
   foreach ($exclude_content_models as $content_model) {
@@ -427,120 +473,254 @@ function islandora_oai_query_solr($start = 0, $field = 'PID', $query = NULL, $se
       $query_processor->solrParams['fq'][] = '(-' . $has_model . ':("' . $content_model . '" OR "info:fedora/' . $content_model . '"))';
     }
   }
+
+  // Recurse through sets if necessary.
   if ($set) {
     // OAI uses : to separate multiple setSpecs so we had to replace it
     // from the pids earlier.
     $sets = explode(':', $set);
+    // Replace the first occurrence of _ with a : so we are back to a
+    // valid pid.
+    $repair_sets = function(&$set) {
+      $set = preg_replace('/_/', ':', $set, 1);
+      $set = trim($set);
+    };
+    array_walk($sets, $repair_sets);
     $descendants = array();
 
-    // Get all descendant children (collection and objs) and add to the sets
-    // array if not already existing.
-    // Cannot constrain on collections only as name conventions may change
-    // across implementations.
-    foreach ($sets as $key => $value) {
-      // Replace the first occurrence of _ with a : so we are back to a
-      // valid pid.
-      $value = preg_replace('/_/', ':', $value, 1);
-      $value = trim($value);
-      $sets[$key] = $value;
-
-      $itql_query = '
-      select $child from <#ri>
-      where
-      (
-        (
-          (
-          $child <fedora-model:hasModel> $model
-          and $model <mulgara:is> <info:fedora/islandora:collectionCModel>
-          and $parent_model <mulgara:is> <info:fedora/fedora-system:ContentModel-3.0>
-          )
-        or
-          (
-          $child <fedora-model:hasModel> $model
-          and $model <fedora-model:hasModel> $parent_model
-          and $parent_model <mulgara:is> <info:fedora/islandora:collectionCModel>
-          and $child <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
-          )
-        minus $child <http://islandora.ca/ontology/relsext#isViewableByRole> $role
-        minus $child <http://islandora.ca/ontology/relsext#isViewableByUser> $user
-        )
-      or
-        (
-          (
-          $child <fedora-model:hasModel> $model
-          and $model <mulgara:is> <info:fedora/islandora:collectionCModel>
-          and $parent_model <mulgara:is> <info:fedora/fedora-system:ContentModel-3.0>
-          )
-        or
-          (
-          $child <fedora-model:hasModel> $model
-          and $model <fedora-model:hasModel> $parent_model
-          and $parent_model <mulgara:is> <info:fedora/islandora:collectionCModel>
-          and $child <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
-          )
-      and
-          (';
-      foreach ($user->roles as $role) {
-        $itql_query .= '$child <http://islandora.ca/ontology/relsext#isViewableByRole> ' . "'$role' or ";
-      }
-      if ($user->uid === 0) {
-        $user_name = 'anonymous';
-      }
-      else {
-        $user_name = $user->name;
-      }
-      $itql_query .= '$child <http://islandora.ca/ontology/relsext#isViewableByUser> ' . "'$user_name'" . ')';
-      $itql_query .= ')
-      )
-    and
-      (
-      walk
-        (
-          $parent <fedora-rels-ext:isMemberOfCollection><info:fedora/' . $value . '>
-           and $child <fedora-rels-ext:isMemberOfCollection> $parent
-        )
-      or
-      walk
-        (
-          $parent <fedora-rels-ext:isMemberOf><info:fedora/' . $value . '>
-          and $child <fedora-rels-ext:isMemberOf> $parent
-        )
-    )';
-
-      $connection = islandora_get_tuque_connection();
-      $query_results = $connection->repository->ri->itqlQuery($itql_query);
-      foreach ($query_results as $result) {
-        $walk_set = $result['child']['uri'];
-        $walk_set = str_replace('info:fedora/', '', $walk_set);
-        if (!in_array($walk_set, $descendants)) {
-          $descendants[] = $walk_set;
+    switch (variable_get('islandora_oai_query_backend', 'sparql')) {
+      case 'sparql':
+        // Get all descendant children (collection and objs) and add to the sets
+        // array if not already existing.
+        // Cannot constrain on collections only as name conventions may change
+        // across implementations.
+        foreach ($sets as $value) {
+          $query_results = islandora_oai_query_ri_for_child_sets($value);
+          foreach ($query_results as $result) {
+            $walk_set = $result['child']['uri'];
+            $walk_set = str_replace('info:fedora/', '', $walk_set);
+            if (!in_array($walk_set, $descendants)) {
+              $descendants[] = $walk_set;
+            }
+          }
+          $descendants[] = $value;
         }
-      }
-      $descendants[] = $value;
-    }
-    $walked_sets = $descendants;
+        $query_processor->solrParams['fq'][] = islandora_oai_build_membership_fq_statement($descendants);
+        break;
 
-    $set_fq = array();
-    // We are using OR here to account for fields in Solr that may index
-    // just the PID or the entire URI. In the future if performance becomes
-    // an issue with huge Solr queries we should re-visit this.
-    foreach ($walked_sets as $walk) {
-      foreach (islandora_oai_get_membership_array() as $collection_field) {
-        $set_fq[] = $collection_field . ':("' . $walk . '" OR "info:fedora/' . $walk . '")';
-      }
+      case 'solr':
+        // Easier if we have ancestors.
+        $ancestors_field = variable_get('islandora_oai_solr_object_ancestors_field', '');
+        if (!empty($ancestors_field)) {
+          foreach ($sets as $value) {
+            $query_processor->solrParams['fq'][] = format_string('!ancestors_field:("!pid" OR "info:fedora/!pid")', array(
+              '!ancestors_field' => $ancestors_field,
+              '!pid' => $value,
+            ));
+          }
+        }
+        // Otherwise we have to recurse manually.
+        else {
+          foreach ($sets as $value) {
+            $query_results = islandora_oai_query_solr_for_child_sets($value);
+            foreach ($query_results as $result) {
+              if (!in_array($result, $descendants)) {
+                $descendants[] = $result;
+              }
+            }
+            $descendants[] = $value;
+          }
+          $query_processor->solrParams['fq'][] = islandora_oai_build_membership_fq_statement($descendants);
+        }
+        break;
     }
-    $query_processor->solrParams['fq'][] = '(' . implode(' OR ', $set_fq) . ')';
   }
   $query_processor->solrStart = $start;
   $query_processor->solrLimit = variable_get('islandora_oai_max_size', '20');
   try {
-    $query_processor->executeQuery(FALSE);
+    // XXX: Use POST as the filters for membership to a collection can be very
+    // large.
+    $query_processor->executeQuery(FALSE, TRUE);
     $solr_results = $query_processor->islandoraSolrResult['response'];
   }
   catch (Exception $e) {
     drupal_set_message(t('error searching @message', array('@message' => $e->getMessage())), 'error');
   }
   return $solr_results;
+}
+
+/**
+ * Helper function to build an 'fq' statement for child PIDs.
+ *
+ * @param array $children
+ *   The array of child PIDs.
+ *
+ * @return string
+ *   The 'fq' statement.
+ */
+function islandora_oai_build_membership_fq_statement(array $children) {
+  $set_fq = array();
+  // We are using OR here to account for fields in Solr that may index
+  // just the PID or the entire URI. In the future if performance becomes
+  // an issue with huge Solr queries we should re-visit this.
+  foreach ($children as $walk) {
+    foreach (islandora_oai_get_membership_array() as $collection_field) {
+      $set_fq[] = format_string('!field:("!walk" OR "info:fedora/!walk")', array(
+        '!field' => $collection_field,
+        '!walk' => $walk,
+      ));
+    }
+  }
+  return implode(' OR ', $set_fq);
+}
+
+/**
+ * Helper function to query recursively for child sets from Solr.
+ *
+ * @param string $parent
+ *   The set to get children in.
+ * @param array $sets
+ *   Used internally to maintain the list of sets found as it recurses.
+ *
+ * @return array
+ *   A list of set PIDs.
+ */
+function islandora_oai_query_solr_for_child_sets($parent, &$sets = array()) {
+  global $user;
+  $user_name = $user->uid === 0 ? 'anonymous' : $user->name;
+
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
+  $qp = new IslandoraSolrQueryProcessor();
+  $qp->buildQuery('*:*');
+  $qp->solrParams['fl'] = 'PID';
+  // Make sure we get everything but still filter on XACML permissions.
+  $qp->solrParams['fq'] = array();
+  module_invoke('islandora_xacml_api', 'islandora_solr_query', $qp);
+  // Set is part of the current collection.
+  $qp->solrParams['fq'][] = islandora_oai_build_membership_fq_statement(array($parent));
+  // Set is also a collection itself.
+  $qp->solrParams['fq'][] = format_string('!field:"info:fedora/islandora:collectionCModel"', array(
+    '!field' => variable_get('islandora_solr_content_model_field', 'RELS_EXT_hasModel_uri_ms'),
+  ));
+
+  // XXX: Use POST as the filters for membership to a collection can be very
+  // large.
+  $qp->executeQuery(FALSE, TRUE);
+  $get_pid = function($object) {
+    return $object['PID'];
+  };
+  $pids = array_map($get_pid, $qp->islandoraSolrResult['response']['objects']);
+  $diff = array_diff($pids, $sets);
+  $sets = array_merge($sets, $pids);
+  // Recurse through the diff.
+  foreach ($diff as $child_collection) {
+    islandora_oai_query_solr_for_child_sets($child_collection, $sets);
+  }
+  return $sets;
+}
+
+/**
+ * Helper function to query for child sets from the RI.
+ *
+ * @param string $set
+ *   The PID of the set to query in.
+ *
+ * @return array
+ *   The results of the RI query from Tuque.
+ */
+function islandora_oai_query_ri_for_child_sets($set) {
+  global $user;
+  $user_name = $user->uid === 0 ? 'anonymous' : $user->name;
+
+  $connection = islandora_get_tuque_connection();
+  // Query sets from RI (SPARQL).
+  if (!variable_get('islandora_risearch_use_itql_when_necessary', TRUE)) {
+    $xacml_filter = module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_filters');
+    $query = <<<EOQ
+SELECT ?child
+FROM <#ri>
+WHERE {
+  ?child <fedora-model:state> <fedora-model:Active> .
+  {
+    ?child <fedora-model:hasModel> <info:fedora/islandora:collectionCModel>
+  } UNION {
+    ?child <fedora-model:hasModel> [<fedora-model:hasModel> <info:fedora/islandora:collectionCModel>]
+  } .
+  {
+    ?child <fedora-rels-ext:isMemberOfCollection>+ <info:fedora/$set>
+  } UNION {
+    ?child <fedora-rels-ext:isMemberOf>+ <info:fedora/$set>
+  }
+  OPTIONAL {
+    ?child <http://islandora.ca/ontology/relsext#isViewableByRole> ?role .
+  }
+  OPTIONAL {
+    ?child <http://islandora.ca/ontology/relsext#isViewableByUser> ?user .
+  }
+  FILTER($xacml_filter)
+}
+EOQ;
+    $query_results = $connection->repository->ri->sparqlQuery($query);
+  }
+  // Query sets from RI (iTQL).
+  else {
+    $itql_query = '
+    select $child from <#ri>
+    where
+    (
+      (
+        (
+        $child <fedora-model:hasModel> $model
+        and $model <mulgara:is> <info:fedora/islandora:collectionCModel>
+        and $model <fedora-model:hasModel> <info:fedora/fedora-system:ContentModel-3.0>
+        )
+      or
+        (
+        $child <fedora-model:hasModel> $model
+        and $model <fedora-model:hasModel> <info:fedora/islandora:collectionCModel>
+        and $child <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
+        )
+      minus $child <http://islandora.ca/ontology/relsext#isViewableByRole> $role
+      minus $child <http://islandora.ca/ontology/relsext#isViewableByUser> $user
+      )
+    or
+      (
+        (
+        $child <fedora-model:hasModel> $model
+        and $model <mulgara:is> <info:fedora/islandora:collectionCModel>
+        and $model <fedora-model:hasModel> <info:fedora/fedora-system:ContentModel-3.0>
+        )
+      or
+        (
+        $child <fedora-model:hasModel> $model
+        and $model <fedora-model:hasModel> <info:fedora/islandora:collectionCModel>
+        and $child <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
+        )
+    and
+        (';
+    foreach ($user->roles as $role) {
+      $itql_query .= '$child <http://islandora.ca/ontology/relsext#isViewableByRole> ' . "'$role' or ";
+    }
+    $itql_query .= '$child <http://islandora.ca/ontology/relsext#isViewableByUser> ' . "'$user_name'" . ')';
+    $itql_query .= ')
+    )
+  and
+    (
+    walk
+      (
+        $parent <fedora-rels-ext:isMemberOfCollection><info:fedora/' . $set . '>
+         and $child <fedora-rels-ext:isMemberOfCollection> $parent
+      )
+    or
+    walk
+      (
+        $parent <fedora-rels-ext:isMemberOf><info:fedora/' . $set . '>
+        and $child <fedora-rels-ext:isMemberOf> $parent
+      )
+  )';
+    $query_results = $connection->repository->ri->itqlQuery($itql_query);
+  }
+  return $query_results;
 }
 
 /**
@@ -592,13 +772,15 @@ function islandora_oai_get_restricted_models() {
  *   The SPARQL query to be executed.
  */
 function islandora_oai_construct_sparql_query_for_sets($filters, $required = array()) {
+  module_load_include('inc', 'islandora', 'includes/tuque');
   $sparql_query = <<<EOQ
   SELECT DISTINCT ?object ?title ?created !vars
   FROM <#ri>
   WHERE {
     ?object <fedora-model:hasModel> ?model ;
             <fedora-model:label> ?title ;
-            <fedora-model:createdDate> ?created .
+            <fedora-model:createdDate> ?created ;
+            <fedora-model:state> <fedora-model:Active> .
     !required
     !optionals
     !filters

@@ -52,7 +52,7 @@ Version 1.0 2007-05-04 Tracy Meehleib <tmee@loc.gov>
 </xsl:when>
 <xsl:otherwise>
 <xsl:for-each select="mods:mods">
-    <oai_etdms:thesis xmlns="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:oai_etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ndltd.org/standards/metadata/etdms/1.0/ http://www.ndltd.org/standards/metadata/etdms/1.0/etdms.xsd">
+    <oai_etdms:thesis xmlns="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:oai_etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ndltd.org/standards/metadata/etdms/1.0/ http://www.ndltd.org/standards/metadata/etdms/1-0/etdms.xsd">
         <xsl:call-template name="title"/>
         <xsl:call-template name="creator"/>
         <xsl:call-template name="subject"/>
@@ -509,7 +509,7 @@ select="mods:titleInfo/mods:title | mods:identifier | mods:location/mods:url">
 <xsl:template match="*"/>
 
 <!--
-<extension xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/etdms.xsd" >
+<extension xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1-0/etdms.xsd" >
 
 	<etd:degree>
   	  	<etd:name>Doctor of Philosophy</etd:name>

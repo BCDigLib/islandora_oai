@@ -490,20 +490,44 @@ function islandora_oai_identify(&$writer, $args) {
  */
 function islandora_oai_get_earliest_datetime() {
   static $earliest_datestamp;
-
   if (!$earliest_datestamp) {
-    $object = islandora_object_load(variable_get('islandora_repository_pid', 'islandora:root'));
+    switch (variable_get('islandora_oai_query_backend', 'sparql')) {
+      case 'sparql':
+        $query = <<<EOQ
+SELECT ?object ?date
+FROM <#ri>
+WHERE {
+  ?object <fedora-model:state> <fedora-model:Active> ;
+          <fedora-model:hasModel> <info:fedora/fedora-system:FedoraObject-3.0> ;
+          <fedora-view:lastModifiedDate> ?date .
+}
+ORDER BY ?date
+LIMIT 1
+EOQ;
+        $connection = islandora_get_tuque_connection();
+        $query_results = $connection->repository->ri->sparqlQuery($query);
+        $result = reset($query_results);
+        $timestamp = strtotime($result['date']['value']);
+        $earliest_datestamp = gmdate('Y-m-d\TH:i:s\Z', $timestamp);
+        break;
 
-    $itql_query = 'select $object $date from <#ri>
-                             where $object <info:fedora/fedora-system:def/model#label> $title
-                             and $object <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
-                             and $object <info:fedora/fedora-system:def/view#lastModifiedDate> $date
-                             order by $date asc';
+      case 'solr':
+        $date_field = variable_get('islandora_oai_date_field', 'fgs_lastModifiedDate_dt');
+        $qp = new IslandoraSolrQueryProcessor();
+        $params = array(
+          'sort' => "$date_field asc",
+          'limit' => 1,
+        );
+        $qp->buildQuery(format_string('!date_field:* AND !state_field:Active', array(
+          '!date_field' => $date_field,
+          '!state_field' => variable_get('islandora_oai_solr_state_field', 'fgs_state_s'),
+        )));
+        $qp->executeQuery(FALSE);
+        $result = reset($qp->islandoraSolrResult['response']['objects']);
+        $earliest_datestamp = $result['solr_doc'][$date_field];
+        break;
 
-    $query_results = $object->repository->ri->itqlQuery($itql_query);
-    $result = reset($query_results);
-    $timestamp = strtotime($result['date']['value']);
-    $earliest_datestamp = gmdate('Y-m-d\TH:i:s\Z', $timestamp);
+    }
   }
   return $earliest_datestamp;
 }
@@ -876,16 +900,15 @@ function islandora_oai_list_metadata_formats(&$writer, $args) {
         $identifier = str_replace('oai:' . $repo_id . ':', '', $val);
 
         $pid_query = str_replace('_', ':', $identifier);
-        $pid_query = 'info:fedora/' . $pid_query;
-        $itql_query = 'select $object $title from <#ri>
-        where $object <fedora-model:label> $title and $object <mulgara:is> <' . $pid_query . '>';
-
+        $query = <<<EOQ
+ASK {
+  <info:fedora/$pid_query> <fedora-model:hasModel> <info:fedora/fedora-system:FedoraObject-3.0> .
+}
+EOQ;
         $connection = islandora_get_tuque_connection();
-        $query_results = $connection->repository->ri->itqlQuery($itql_query);
-        foreach ($query_results as $result) {
-          $result_pid = $result['object']['uri'];
-        }
-        if (empty($result_pid)) {
+        $query_results = $connection->repository->ri->sparqlQuery($query);
+        $query_result = reset($query_results);
+        if (!$query_results || $query_result === FALSE || strtolower($query_result['k0']['value']) != 'true') {
           islandora_oai_add_error('idDoesNotExist', 'identifier', $identifier);
           return FALSE;
         }

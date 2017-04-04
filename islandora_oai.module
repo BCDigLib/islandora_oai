@@ -6,6 +6,19 @@
  */
 
 define('ISLANDORA_OAI_REQUEST_HANDLER_HOOK', 'islandora_oai_identify_request_handler');
+define('ISLANDORA_OAI_ADMINISTER_PERMISSION', 'administer islandora oai');
+
+/**
+ * Implements hook_permission().
+ */
+function islandora_oai_permission() {
+  return array(
+    ISLANDORA_OAI_ADMINISTER_PERMISSION => array(
+      'title' => t('Administer Islandora OAI'),
+      'description' => t('Administer Islandora OAI configuration.'),
+    ),
+  );
+}
 
 /**
  * Implements hook_menu().
@@ -18,7 +31,7 @@ function islandora_oai_menu() {
     'file' => 'includes/admin.form.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_oai_admin_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array(ISLANDORA_OAI_ADMINISTER_PERMISSION),
   );
   $items['admin/islandora/tools/islandora-oai/handler'] = array(
     'title' => 'Islandora OAI Request Handler',
@@ -26,7 +39,7 @@ function islandora_oai_menu() {
     'file' => 'includes/handler.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_oai_handler_configuration_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array(ISLANDORA_OAI_ADMINISTER_PERMISSION),
   );
   $items['admin/islandora/tools/islandora-oai/handler/configure'] = array(
     'title' => 'Settings',
@@ -34,7 +47,7 @@ function islandora_oai_menu() {
     'file' => 'includes/handler.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_oai_handler_configuration_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array(ISLANDORA_OAI_ADMINISTER_PERMISSION),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 0,
   );
@@ -44,7 +57,7 @@ function islandora_oai_menu() {
     'file' => 'includes/handler.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_oai_file_management_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array(ISLANDORA_OAI_ADMINISTER_PERMISSION),
     'type' => MENU_LOCAL_TASK,
     'weight' => 1,
   );
