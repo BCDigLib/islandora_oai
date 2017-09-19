@@ -211,7 +211,7 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template match="mods:genre">
 		<xsl:choose>
-			<xsl:when test="@authority='dct'">
+			<xsl:when test="@authority='marcgt'">
 				<dc:type>
 					<xsl:value-of select="."/>
 				</dc:type>
@@ -221,11 +221,11 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 					</dc:type>
 				</xsl:for-each>
 			</xsl:when>
-			<xsl:otherwise>
+			<!-- <xsl:otherwise>
 				<dc:type>
 					<xsl:value-of select="."/>
 				</dc:type>
-			</xsl:otherwise>
+			</xsl:otherwise> -->
 		</xsl:choose>
 	</xsl:template>
 
@@ -316,7 +316,7 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:identifier>
 	</xsl:template>
 
-	<xsl:template match="mods:language">
+	<xsl:template match="mods:language[@type='text']">
 		<dc:language>
 			<xsl:value-of select="normalize-space(.)"/>
 		</dc:language>
