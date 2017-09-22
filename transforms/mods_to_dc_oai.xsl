@@ -4,7 +4,8 @@
 	xmlns:dc="http://purl.org/dc/elements/1.1/"
 	xmlns:srw_dc="info:srw/schema/1/dc-schema"
 	xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
 This stylesheet transforms MODS version 3.2 records and collections of records to simple Dublin Core (DC) records,
@@ -399,6 +400,12 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
 		<xsl:value-of select="."/>
+	</xsl:template>
+	
+	<xsl:template match="mods:extension/etdms:name">
+		<dc:description>
+			<xsl:text>Thesis ("</xsl:text><xsl:value-of select="."/><xsl:text>")—Boston College, "</xsl:text><xsl:value-of select="@@@"/><xsl:text>".</xsl:text>
+		</dc:description>
 	</xsl:template>
 
 	<!-- suppress all else:-->
