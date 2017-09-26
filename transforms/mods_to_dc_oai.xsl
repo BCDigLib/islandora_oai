@@ -87,17 +87,17 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	<xsl:template match="mods:name">
 		<xsl:choose>
 			<xsl:when
-				test="mods:role/mods:roleTerm[@type='text']='creator' or mods:role/mods:roleTerm[@type='code']='cre' ">
+				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut' ">
 				<dc:creator>
 					<xsl:call-template name="name"/>
 				</dc:creator>
 			</xsl:when>
-
-			<xsl:otherwise>
-				<dc:contributor>
-					<xsl:call-template name="name"/>
-				</dc:contributor>
-			</xsl:otherwise>
+			<xsl:when
+				test="mods:role/mods:roleTerm[@type='text']='Thesis advisor' or mods:role/mods:roleTerm[@type='code']='ths' ">
+				<dc:description>
+					<xsl:text>Thesis advisor: </xsl:text><xsl:call-template name="name"/>
+				</dc:description>
+			</xsl:when>
 		</xsl:choose>
 	</xsl:template>
 
@@ -180,7 +180,7 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	<xsl:template match="mods:originInfo">
 		<xsl:apply-templates select="*[@point='start']"/>
 		<xsl:for-each
-			select="mods:dateIssued[@point!='start' and @point!='end'] |mods:dateCreated[@point!='start' and @point!='end'] | mods:dateCaptured[@point!='start' and @point!='end'] | mods:dateOther[@point!='start' and @point!='end']">
+			select="mods:dateIssued[@point!='start' and @point!='end']">
 			<dc:date>
 				<xsl:value-of select="."/>
 			</dc:date>
