@@ -178,9 +178,14 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	</xsl:template>
 
 	<xsl:template match="mods:originInfo">
-		<xsl:apply-templates select="*[@point='start']"/>
+		<!-- <xsl:apply-templates select="*[@point='start']"/>
 		<xsl:for-each
-			select="mods:dateIssued[@point!='start' and @point!='end']">
+			select="mods:dateIssued[@point!='start' and @point!='end'] |mods:dateCreated[@point!='start' and @point!='end'] | mods:dateCaptured[@point!='start' and @point!='end'] | mods:dateOther[@point!='start' and @point!='end']">
+			<dc:date>
+				<xsl:value-of select="."/>
+			</dc:date>
+		</xsl:for-each> -->
+		<xsl:for-each select="mods:dateIssued[@keyDate='yes']">
 			<dc:date>
 				<xsl:value-of select="."/>
 			</dc:date>
@@ -191,23 +196,6 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 				<xsl:value-of select="."/>
 			</dc:publisher>
 		</xsl:for-each>
-	</xsl:template>
-
-	<xsl:template match="mods:dateIssued | mods:dateCreated | mods:dateCaptured">
-		<dc:date>
-			<xsl:choose>
-				<xsl:when test="@point='start'">
-					<xsl:value-of select="."/>
-					<xsl:text> - </xsl:text>
-				</xsl:when>
-				<xsl:when test="@point='end'">
-					<xsl:value-of select="."/>
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="."/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</dc:date>
 	</xsl:template>
 
 	<xsl:template match="mods:genre">
@@ -387,12 +375,12 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		<xsl:value-of select="normalize-space($name)"/>
 	</xsl:template>
 
-	<xsl:template match="mods:dateIssued[@point='start'] | mods:dateCreated[@point='start'] | mods:dateCaptured[@point='start'] | mods:dateOther[@point='start'] ">
+	<!-- <xsl:template match="mods:dateIssued[@point='start'] | mods:dateCreated[@point='start'] | mods:dateCaptured[@point='start'] | mods:dateOther[@point='start'] ">
 		<xsl:variable name="dateName" select="local-name()"/>
 			<dc:date>
 				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()=$dateName][@point='end']"/>
 			</dc:date>
-	</xsl:template>
+	</xsl:template> -->
 
 	<xsl:template match="mods:temporal[@point='start']  ">
 		<xsl:value-of select="."/>-<xsl:value-of select="../mods:temporal[@point='end']"/>
