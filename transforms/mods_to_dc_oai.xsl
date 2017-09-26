@@ -390,10 +390,22 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		<xsl:value-of select="."/>
 	</xsl:template>
 	
-	<xsl:template match="mods:extension/etdms:name">
-		<dc:description>
-			<xsl:text>Thesis ("</xsl:text><xsl:value-of select="."/><xsl:text>")—Boston College, "</xsl:text><xsl:value-of select="@@@"/><xsl:text>".</xsl:text>
-		</dc:description>
+	<xsl:template match="mods:extension">
+		<xsl:for-each select="etdms:degree/etdms:name">
+			<dc:description>
+				<xsl:text>Thesis ("</xsl:text><xsl:value-of select="."/><xsl:text>")—Boston College, "</xsl:text><xsl:value-of select="//mods:originInfo/mods:dateIssued[@keyDate='yes']"/><xsl:text>".</xsl:text>
+			</dc:description>
+		</xsl:for-each>
+		<xsl:for-each select="etdms:degree/etdms:grantor">
+			<dc:description>
+				<xsl:text>Submitted to: "</xsl:text><xsl:value-of select="."/><xsl:text>".</xsl:text>
+			</dc:description>
+		</xsl:for-each>
+		<xsl:for-each select="etdms:degree/etdms:discipline">
+			<dc:description>
+				<xsl:text>Discipline: "</xsl:text><xsl:value-of select="."/><xsl:text>".</xsl:text>
+			</dc:description>
+		</xsl:for-each>
 	</xsl:template>
 
 	<!-- suppress all else:-->
