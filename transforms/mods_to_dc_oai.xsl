@@ -8,27 +8,25 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
+version 1.0 2017-09-26
+This stylesheet is the Boston College-specific MODS to DC transformation for theses and dissertations to feed into WorldCat Digital Gateway.
+It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms). The notes below
+are from the original transform.
+
 This stylesheet transforms MODS version 3.2 records and collections of records to simple Dublin Core (DC) records,
 based on the Library of Congress' MODS to simple DC mapping <http://www.loc.gov/standards/mods/mods-dcsimple.html>
-
 The stylesheet will transform a collection of MODS 3.2 records into simple Dublin Core (DC)
 as expressed by the SRU DC schema <http://www.loc.gov/standards/sru/dc-schema.xsd>
-
 The stylesheet will transform a single MODS 3.2 record into simple Dublin Core (DC)
 as expressed by the OAI DC schema <http://www.openarchives.org/OAI/2.0/oai_dc.xsd>
-
 Because MODS is more granular than DC, transforming a given MODS element or subelement to a DC element frequently results in less precise tagging,
 and local customizations of the stylesheet may be necessary to achieve desired results.
 
 This stylesheet makes the following decisions in its interpretation of the MODS to simple DC mapping:
 
-When the roleTerm value associated with a name is creator, then name maps to dc:creator
-When there is no roleTerm value associated with name, or the roleTerm value associated with name is a value other than creator, then name maps to dc:contributor
-Start and end dates are presented as span dates in dc:date and in dc:coverage
 When the first subelement in a subject wrapper is topic, subject subelements are strung together in dc:subject with hyphens separating them
 Some subject subelements, i.e., geographic, temporal, hierarchicalGeographic, and cartographics, are also parsed into dc:coverage
 The subject subelement geographicCode is dropped in the transform
-
 
 Revision 1.1	2007-05-18 <tmee@loc.gov>
 		Added modsCollection conversion to DC SRU
@@ -305,9 +303,9 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:identifier>
 	</xsl:template>
 
-	<xsl:template match="mods:language[@type='text']">
+	<xsl:template match="mods:language">
 		<dc:language>
-			<xsl:value-of select="normalize-space(.)"/>
+			<xsl:value-of select="normalize-space(mods:languageTerm[@type='text'])"/>
 		</dc:language>
 	</xsl:template>
 
