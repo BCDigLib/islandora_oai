@@ -12,7 +12,7 @@ version 1.0 2017-09-26
 This stylesheet is the Boston College-specific MODS to DC transformation for theses and dissertations to feed into WorldCat Digital Gateway.
 It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms). The notes below
 are from the original transform.
-
+________________________________________________________________________________________________________________
 This stylesheet transforms MODS version 3.2 records and collections of records to simple Dublin Core (DC) records,
 based on the Library of Congress' MODS to simple DC mapping <http://www.loc.gov/standards/mods/mods-dcsimple.html>
 The stylesheet will transform a collection of MODS 3.2 records into simple Dublin Core (DC)
