@@ -87,13 +87,15 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut' ">
 				<dc:creator>
-					<xsl:call-template name="name"/>
+					<!-- <xsl:call-template name="name"/> -->
+					<xsl:value-of select="mods:displayForm"/><xsl:text> (</xsl:text><xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>)</xsl:text>
 				</dc:creator>
 			</xsl:when>
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Thesis advisor' or mods:role/mods:roleTerm[@type='code']='ths' ">
 				<dc:description>
-					<xsl:text>Thesis advisor: </xsl:text><xsl:call-template name="name"/>
+					<!-- <xsl:text>Thesis advisor: </xsl:text><xsl:call-template name="name"/> -->
+					<xsl:value-of select="mods:displayForm"/><xsl:text> (</xsl:text><xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>)</xsl:text>
 				</dc:description>
 			</xsl:when>
 		</xsl:choose>
@@ -391,17 +393,17 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	<xsl:template match="mods:extension">
 		<xsl:for-each select="etdms:degree/etdms:name">
 			<dc:description>
-				<xsl:text>Thesis ("</xsl:text><xsl:value-of select="."/><xsl:text>")—Boston College, "</xsl:text><xsl:value-of select="//mods:originInfo/mods:dateIssued[@keyDate='yes']"/><xsl:text>".</xsl:text>
+				<xsl:text>Thesis (</xsl:text><xsl:value-of select="."/><xsl:text>) — Boston College, </xsl:text><xsl:value-of select="//mods:originInfo/mods:dateIssued[@keyDate='yes']"/><xsl:text>.</xsl:text>
 			</dc:description>
 		</xsl:for-each>
 		<xsl:for-each select="etdms:degree/etdms:grantor">
 			<dc:description>
-				<xsl:text>Submitted to: "</xsl:text><xsl:value-of select="."/><xsl:text>".</xsl:text>
+				<xsl:text>Submitted to: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
 			</dc:description>
 		</xsl:for-each>
 		<xsl:for-each select="etdms:degree/etdms:discipline">
 			<dc:description>
-				<xsl:text>Discipline: "</xsl:text><xsl:value-of select="."/><xsl:text>".</xsl:text>
+				<xsl:text>Discipline: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
 			</dc:description>
 		</xsl:for-each>
 	</xsl:template>
