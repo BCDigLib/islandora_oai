@@ -63,9 +63,9 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	<xsl:template match="mods:titleInfo">
 		<dc:title>
 			<xsl:value-of select="mods:nonSort"/>
-			<xsl:if test="mods:nonSort">
+			<!-- <xsl:if test="mods:nonSort">
 				<xsl:text> </xsl:text>
-			</xsl:if>
+			</xsl:if> -->
 			<xsl:value-of select="mods:title"/>
 			<xsl:if test="mods:subTitle">
 				<xsl:text>: </xsl:text>
@@ -88,14 +88,14 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut' ">
 				<dc:creator>
 					<!-- <xsl:call-template name="name"/> -->
-					<xsl:value-of select="mods:displayForm"/><xsl:text> (</xsl:text><xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>)</xsl:text>
+					<xsl:value-of select="mods:displayForm"/>
 				</dc:creator>
 			</xsl:when>
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Thesis advisor' or mods:role/mods:roleTerm[@type='code']='ths' ">
 				<dc:description>
 					<!-- <xsl:text>Thesis advisor: </xsl:text><xsl:call-template name="name"/> -->
-					<xsl:value-of select="mods:displayForm"/><xsl:text> (</xsl:text><xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>)</xsl:text>
+					<xsl:text>Thesis advisor: </xsl:text><xsl:value-of select="mods:namePart[@type='given']"/><xsl:text> </xsl:text><xsl:value-of select="mods:namePart[@type='family']"/>
 				</dc:description>
 			</xsl:when>
 		</xsl:choose>
