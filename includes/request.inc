@@ -785,7 +785,9 @@ function islandora_oai_build_record_response(&$writer, $record, $full_record = F
   foreach ($sets as $set) {
     $set = str_replace('info:fedora/', '', $set);
     $set_spec = str_replace(':', '_', $set);
-    if ($set_spec != 'islandora_bc-root') {
+    if (str_pos($set_spec, 'islandora_') && $set_spec !== 'islandora_root' && $set_spec !== 'islandora_1360') {
+      $set_spec = 'islandora_root:' . $set_spec;
+    elseif (str_pos($set_spec, 'bc-ir_') || $set_spec == 'islandora_1360') {
       $set_spec = 'islandora_bc-root:' . $set_spec;
     }
     $writer->writeElement('setSpec', $set_spec);
@@ -1047,7 +1049,9 @@ function islandora_oai_list_sets($writer, $args) {
       $set_name = t('Empty label');
     }
     $set_pid = str_replace(':', '_', $result['pid']);
-    if ($set_pid != 'islandora_bc-root' && $set_pid != 'islandora_root') {
+    if (str_pos($set_pid, 'islandora_') && $set_pid !== 'islandora_root' && $set_pid !== 'islandora_1360') {
+      $set_pid = 'islandora_root:' . $set_pid;
+    elseif (str_pos($set_pid, 'bc-ir_') || $set_pid == 'islandora_1360') {
       $set_pid = 'islandora_bc-root:' . $set_pid;
     }
     $writer->writeElement('setSpec', $set_pid);
