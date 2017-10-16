@@ -84,12 +84,18 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template match="mods:name">
 		<xsl:choose>
-			<xsl:when
-				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut' ">
+			<xsl:when test="@usage='primary'">
 				<dc:creator>
 					<!-- <xsl:call-template name="name"/> -->
 					<xsl:value-of select="mods:displayForm"/>
 				</dc:creator>
+			</xsl:when>
+			<xsl:when
+				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut'">
+				<dc:contributor>
+					<!-- <xsl:call-template name="name"/> -->
+					<xsl:value-of select="mods:displayForm"/>
+				</dc:contributor>
 			</xsl:when>
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Thesis advisor' or mods:role/mods:roleTerm[@type='code']='ths' ">
@@ -281,6 +287,25 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:format>
 	</xsl:template>
 
+<!--THIS IS WHERE DC:DESCRIPTIONS SHOULD GO -->
+	<xsl:template match="mods:extension">
+		<xsl:for-each select="etdms:degree/etdms:name">
+			<dc:description>
+				<xsl:text>Thesis (</xsl:text><xsl:value-of select="."/><xsl:text>) — Boston College, </xsl:text><xsl:value-of select="//mods:originInfo/mods:dateIssued[@keyDate='yes']"/><xsl:text>.</xsl:text>
+			</dc:description>
+		</xsl:for-each>
+		<xsl:for-each select="etdms:degree/etdms:grantor">
+			<dc:description>
+				<xsl:text>Submitted to: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
+			</dc:description>
+		</xsl:for-each>
+		<xsl:for-each select="etdms:degree/etdms:discipline">
+			<dc:description>
+				<xsl:text>Discipline: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
+			</dc:description>
+		</xsl:for-each>
+	</xsl:template>
+
 	<xsl:template match="mods:identifier">
 		<xsl:variable name="type" select="translate(@type,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')"/>
 		<xsl:choose>
@@ -388,24 +413,6 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
 		<xsl:value-of select="."/>
-	</xsl:template>
-	
-	<xsl:template match="mods:extension">
-		<xsl:for-each select="etdms:degree/etdms:name">
-			<dc:description>
-				<xsl:text>Thesis (</xsl:text><xsl:value-of select="."/><xsl:text>) — Boston College, </xsl:text><xsl:value-of select="//mods:originInfo/mods:dateIssued[@keyDate='yes']"/><xsl:text>.</xsl:text>
-			</dc:description>
-		</xsl:for-each>
-		<xsl:for-each select="etdms:degree/etdms:grantor">
-			<dc:description>
-				<xsl:text>Submitted to: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
-			</dc:description>
-		</xsl:for-each>
-		<xsl:for-each select="etdms:degree/etdms:discipline">
-			<dc:description>
-				<xsl:text>Discipline: </xsl:text><xsl:value-of select="."/><xsl:text>.</xsl:text>
-			</dc:description>
-		</xsl:for-each>
 	</xsl:template>
 
 	<!-- suppress all else:-->
