@@ -84,26 +84,28 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template match="mods:name">
 		<xsl:choose>
+			<!-- Create dc:creator -->
 			<xsl:when test="@usage='primary'">
 				<dc:creator>
-					<!-- <xsl:call-template name="name"/> -->
-					<xsl:value-of select="mods:displayForm"/>
+					<xsl:call-template name="name"/>
 				</dc:creator>
 			</xsl:when>
+			<!-- Create dc:contributor -->
 			<xsl:when
-				test="mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='code']='aut'">
+				test="mods:role/mods:roleTerm[@type='text']='Abridger' or mods:role/mods:roleTerm[@type='text']='Actor' or mods:role/mods:roleTerm[@type='text']='Adapter' or mods:role/mods:roleTerm[@type='text']='Animator' or mods:role/mods:roleTerm[@type='text']='Annotator' or mods:role/mods:roleTerm[@type='text']='Arranger' or mods:role/mods:roleTerm[@type='text']='Art director' or mods:role/mods:roleTerm[@type='text']='Author of afterword, colophon, etc.' or mods:role/mods:roleTerm[@type='text']='Author of dialog' or mods:role/mods:roleTerm[@type='text']='Author of introduction, etc.' or mods:role/mods:roleTerm[@type='text']='Autographer' or mods:role/mods:roleTerm[@type='text']='Binding designer' or mods:role/mods:roleTerm[@type='text']='Blurb writer' or mods:role/mods:roleTerm[@type='text']='Book designer' or mods:role/mods:roleTerm[@type='text']='Calligrapher' or mods:role/mods:roleTerm[@type='text']='Cinematographer' or mods:role/mods:roleTerm[@type='text']='Colorist' or mods:role/mods:roleTerm[@type='text']='Commentator' or mods:role/mods:roleTerm[@type='text']='Commentator for written text' or mods:role/mods:roleTerm[@type='text']='Conceptor' or mods:role/mods:roleTerm[@type='text']='Conductor' or mods:role/mods:roleTerm[@type='text']='Contributor' or mods:role/mods:roleTerm[@type='text']='Corrector' or mods:role/mods:roleTerm[@type='text']='Correspondent' or mods:role/mods:roleTerm[@type='text']='Court reporter' or mods:role/mods:roleTerm[@type='text']='Data contributor' or mods:role/mods:roleTerm[@type='text']='Dedicator' or mods:role/mods:roleTerm[@type='text']='Delineator' or mods:role/mods:roleTerm[@type='text']='Director' or mods:role/mods:roleTerm[@type='text']='Draftsman' or mods:role/mods:roleTerm[@type='text']='Editor' or mods:role/mods:roleTerm[@type='text']='Editor of compilation' or mods:role/mods:roleTerm[@type='text']='Editor of moving image work' or mods:role/mods:roleTerm[@type='text']='Engraver' or mods:role/mods:roleTerm[@type='text']='Etcher' or mods:role/mods:roleTerm[@type='text']='Film director' or mods:role/mods:roleTerm[@type='text']='Film editor' or mods:role/mods:roleTerm[@type='text']='Geographic information specialist' or mods:role/mods:roleTerm[@type='text']='Host' or mods:role/mods:roleTerm[@type='text']='Illuminator' or mods:role/mods:roleTerm[@type='text']='Illustrator' or mods:role/mods:roleTerm[@type='text']='Instrumentalist' or mods:role/mods:roleTerm[@type='text']='Interviewee' or mods:role/mods:roleTerm[@type='text']='Interviewer' or mods:role/mods:roleTerm[@type='text']='Lighting designer' or mods:role/mods:roleTerm[@type='text']='Marbler' or mods:role/mods:roleTerm[@type='text']='Markup editor' or mods:role/mods:roleTerm[@type='text']='Metal-engraver' or mods:role/mods:roleTerm[@type='text']='Minute taker' or mods:role/mods:roleTerm[@type='text']='Moderator' or mods:role/mods:roleTerm[@type='text']='Music copyist' or mods:role/mods:roleTerm[@type='text']='Musical director' or mods:role/mods:roleTerm[@type='text']='Musician' or mods:role/mods:roleTerm[@type='text']='Narrator' or mods:role/mods:roleTerm[@type='text']='Onscreen presenter' or mods:role/mods:roleTerm[@type='text']='Organizer' or mods:role/mods:roleTerm[@type='text']='Panelist' or mods:role/mods:roleTerm[@type='text']='Performer' or mods:role/mods:roleTerm[@type='text']='Platemaker' or mods:role/mods:roleTerm[@type='text']='Praeses' or mods:role/mods:roleTerm[@type='text']='Production designer' or mods:role/mods:roleTerm[@type='text']='Project director' or mods:role/mods:roleTerm[@type='text']='Puppeteer' or mods:role/mods:roleTerm[@type='text']='Recording engineer' or mods:role/mods:roleTerm[@type='text']='Redaktor' or mods:role/mods:roleTerm[@type='text']='Renderer' or mods:role/mods:roleTerm[@type='text']='Rubricator' or mods:role/mods:roleTerm[@type='text']='Screenwriter' or mods:role/mods:roleTerm[@type='text']='Set designer' or mods:role/mods:roleTerm[@type='text']='Singer' or mods:role/mods:roleTerm[@type='text']='Speaker' or mods:role/mods:roleTerm[@type='text']='Stage director' or mods:role/mods:roleTerm[@type='text']='Storyteller' or mods:role/mods:roleTerm[@type='text']='Surveyor' or mods:role/mods:roleTerm[@type='text']='Teacher' or mods:role/mods:roleTerm[@type='text']='Transcriber' or mods:role/mods:roleTerm[@type='text']='Type designer' or mods:role/mods:roleTerm[@type='text']='Typographer' or mods:role/mods:roleTerm[@type='text']='Voice actor' or mods:role/mods:roleTerm[@type='text']='Writer of accompanying material' or mods:role/mods:roleTerm[@type='text']='Writer of added commentary' or mods:role/mods:roleTerm[@type='text']='Writer of added lyrics' or mods:role/mods:roleTerm[@type='text']='Writer of added text' or mods:role/mods:roleTerm[@type='text']='Writer of introduction' or mods:role/mods:roleTerm[@type='text']='Writer of preface' or mods:role/mods:roleTerm[@type='text']='Writer of supplementary textual content' or mods:role/mods:roleTerm[@type='text']='Architect' or mods:role/mods:roleTerm[@type='text']='Artist' or mods:role/mods:roleTerm[@type='text']='Attributed name' or mods:role/mods:roleTerm[@type='text']='Author' or mods:role/mods:roleTerm[@type='text']='Cartographer' or mods:role/mods:roleTerm[@type='text']='Choreographer' or mods:role/mods:roleTerm[@type='text']='Compiler' or mods:role/mods:roleTerm[@type='text']='Composer' or mods:role/mods:roleTerm[@type='text']='Compositor' or mods:role/mods:roleTerm[@type='text']='Costume designer' or mods:role/mods:roleTerm[@type='text']='Creator' or mods:role/mods:roleTerm[@type='text']='Designer' or mods:role/mods:roleTerm[@type='text']='Dissertant' or mods:role/mods:roleTerm[@type='text']='Filmmaker' or mods:role/mods:roleTerm[@type='text']='Forger' or mods:role/mods:roleTerm[@type='text']='Inventor' or mods:role/mods:roleTerm[@type='text']='Landscape architect' or mods:role/mods:roleTerm[@type='text']='Librettist' or mods:role/mods:roleTerm[@type='text']='Lithographer' or mods:role/mods:roleTerm[@type='text']='Lyricist' or mods:role/mods:roleTerm[@type='text']='Photographer' or mods:role/mods:roleTerm[@type='text']='Programmer' or mods:role/mods:roleTerm[@type='text']='Reporter' or mods:role/mods:roleTerm[@type='text']='Scenarist' or mods:role/mods:roleTerm[@type='text']='Sculptor'">
 				<dc:contributor>
-					<!-- <xsl:call-template name="name"/> -->
-					<xsl:value-of select="mods:displayForm"/>
+					<xsl:call-template name="name"/>
 				</dc:contributor>
 			</xsl:when>
+			<!-- Suppress publisher- and coverage-type MARC roleTerms includes: Setting, University place, Associated name, Issuing body, Originator, Presenter, Printer, Printer of plates, Printmaker, Provider, Publisher-->
 			<xsl:when
-				test="mods:role/mods:roleTerm[@type='text']='Thesis advisor' or mods:role/mods:roleTerm[@type='code']='ths' ">
+				test="mods:role/mods:roleTerm[@type='text']='Setting' or mods:role/mods:roleTerm[@type='text']='University place' or mods:role/mods:roleTerm[@type='text']='Associated name' or mods:role/mods:roleTerm[@type='text']='Issuing body' or mods:role/mods:roleTerm[@type='text']='Originator' or mods:role/mods:roleTerm[@type='text']='Presenter' or mods:role/mods:roleTerm[@type='text']='Printer' or mods:role/mods:roleTerm[@type='text']='Printer of plates' or mods:role/mods:roleTerm[@type='text']='Printmaker' or mods:role/mods:roleTerm[@type='text']='Provider' or mods:role/mods:roleTerm[@type='text']='Publisher'"/>			
+			<!-- Create dc:description -->
+			<xsl:otherwise>
 				<dc:description>
-					<!-- <xsl:text>Thesis advisor: </xsl:text><xsl:call-template name="name"/> -->
-					<xsl:text>Thesis advisor: </xsl:text><xsl:value-of select="mods:namePart[@type='given']"/><xsl:text> </xsl:text><xsl:value-of select="mods:namePart[@type='family']"/>
+					<xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>: </xsl:text><xsl:call-template name="name"/>
 				</dc:description>
-			</xsl:when>
+			</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
 
@@ -124,7 +126,6 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 				<xsl:value-of select="."/>
 				<xsl:if test="position()!=last()">--</xsl:if>
 			</xsl:for-each>
-
 			<xsl:for-each select="mods:name">
 				<xsl:call-template name="name"/>
 			</xsl:for-each>
@@ -287,7 +288,6 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:format>
 	</xsl:template>
 
-<!--THIS IS WHERE DC:DESCRIPTIONS SHOULD GO -->
 	<xsl:template match="mods:extension">
 		<xsl:for-each select="etdms:degree/etdms:name">
 			<dc:description>
@@ -372,30 +372,19 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 
 	<xsl:template name="name">
 		<xsl:variable name="name">
-			<xsl:for-each select="mods:namePart[not(@type)]">
-				<xsl:value-of select="."/>
-				<xsl:text> </xsl:text>
-			</xsl:for-each>
-			<xsl:value-of select="mods:namePart[@type='family']"/>
-			<xsl:if test="mods:namePart[@type='given']">
-				<xsl:text>, </xsl:text>
-				<xsl:value-of select="mods:namePart[@type='given']"/>
-			</xsl:if>
-			<xsl:if test="mods:namePart[@type='date']">
-				<xsl:text>, </xsl:text>
-				<xsl:value-of select="mods:namePart[@type='date']"/>
-				<xsl:text/>
-			</xsl:if>
 			<xsl:if test="mods:displayForm">
-				<xsl:text> (</xsl:text>
 				<xsl:value-of select="mods:displayForm"/>
-				<xsl:text>) </xsl:text>
 			</xsl:if>
-			<xsl:for-each select="mods:role[mods:roleTerm[@type='text']!='creator']">
-				<xsl:text> (</xsl:text>
-				<xsl:value-of select="normalize-space(.)"/>
-				<xsl:text>) </xsl:text>
-			</xsl:for-each>
+			<xsl:if test="not(mods:displayForm)">
+				<xsl:choose>
+					<xsl:when test="mods:namePart[@type='family']">
+						<xsl:value-of select="mods:namePart[@type='family']"/><xsl:text>, </xsl:text><xsl:value-of select="mods:namePart[@type='given']"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:value-of select="mods:namePart"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:if>	
 		</xsl:variable>
 		<xsl:value-of select="normalize-space($name)"/>
 	</xsl:template>
