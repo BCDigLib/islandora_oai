@@ -8,32 +8,10 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
-version 1.0 2017-09-26
-This stylesheet is the Boston College-specific MODS to DC transformation for theses and dissertations to feed into WorldCat Digital Gateway.
+version 2.0 2017-12-13
+This stylesheet is the Boston College-specific MODS to DC transformation.
 It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms). The notes below
 are from the original transform.
-________________________________________________________________________________________________________________
-This stylesheet transforms MODS version 3.2 records and collections of records to simple Dublin Core (DC) records,
-based on the Library of Congress' MODS to simple DC mapping <http://www.loc.gov/standards/mods/mods-dcsimple.html>
-The stylesheet will transform a collection of MODS 3.2 records into simple Dublin Core (DC)
-as expressed by the SRU DC schema <http://www.loc.gov/standards/sru/dc-schema.xsd>
-The stylesheet will transform a single MODS 3.2 record into simple Dublin Core (DC)
-as expressed by the OAI DC schema <http://www.openarchives.org/OAI/2.0/oai_dc.xsd>
-Because MODS is more granular than DC, transforming a given MODS element or subelement to a DC element frequently results in less precise tagging,
-and local customizations of the stylesheet may be necessary to achieve desired results.
-
-This stylesheet makes the following decisions in its interpretation of the MODS to simple DC mapping:
-
-When the first subelement in a subject wrapper is topic, subject subelements are strung together in dc:subject with hyphens separating them
-Some subject subelements, i.e., geographic, temporal, hierarchicalGeographic, and cartographics, are also parsed into dc:coverage
-The subject subelement geographicCode is dropped in the transform
-
-Revision 1.1	2007-05-18 <tmee@loc.gov>
-		Added modsCollection conversion to DC SRU
-		Updated introductory documentation
-
-Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
-
 -->
 
 	<xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
@@ -60,12 +38,9 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</xsl:choose>
 	</xsl:template>
 
-	<xsl:template match="mods:titleInfo">
+	<xsl:template match="mods:titleInfo"> <!-- DONE -->
 		<dc:title>
 			<xsl:value-of select="mods:nonSort"/>
-			<!-- <xsl:if test="mods:nonSort">
-				<xsl:text> </xsl:text>
-			</xsl:if> -->
 			<xsl:value-of select="mods:title"/>
 			<xsl:if test="mods:subTitle">
 				<xsl:text>: </xsl:text>
@@ -82,7 +57,7 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:title>
 	</xsl:template>
 
-	<xsl:template match="mods:name">
+	<xsl:template match="mods:name"> <!-- DONE -->
 		<xsl:choose>
 			<!-- Create dc:creator -->
 			<xsl:when test="@usage='primary'">
@@ -100,7 +75,7 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 			<!-- Suppress publisher- and coverage-type MARC roleTerms includes: Setting, University place, Associated name, Issuing body, Originator, Presenter, Printer, Printer of plates, Printmaker, Provider, Publisher-->
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Setting' or mods:role/mods:roleTerm[@type='text']='University place' or mods:role/mods:roleTerm[@type='text']='Associated name' or mods:role/mods:roleTerm[@type='text']='Issuing body' or mods:role/mods:roleTerm[@type='text']='Originator' or mods:role/mods:roleTerm[@type='text']='Presenter' or mods:role/mods:roleTerm[@type='text']='Printer' or mods:role/mods:roleTerm[@type='text']='Printer of plates' or mods:role/mods:roleTerm[@type='text']='Printmaker' or mods:role/mods:roleTerm[@type='text']='Provider' or mods:role/mods:roleTerm[@type='text']='Publisher'"/>			
-			<!-- Create dc:description -->
+			<!-- Create dc:description that will handle all other roleTerms, whether MARC or not -->
 			<xsl:otherwise>
 				<dc:description>
 					<xsl:value-of select="mods:role/mods:roleTerm[@type='text']"/><xsl:text>: </xsl:text><xsl:call-template name="name"/>
@@ -185,16 +160,35 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 	</xsl:template>
 
 	<xsl:template match="mods:originInfo">
-		<!-- <xsl:apply-templates select="*[@point='start']"/>
-		<xsl:for-each
-			select="mods:dateIssued[@point!='start' and @point!='end'] |mods:dateCreated[@point!='start' and @point!='end'] | mods:dateCaptured[@point!='start' and @point!='end'] | mods:dateOther[@point!='start' and @point!='end']">
+		<xsl:for-each select="child::*[@keyDate='yes']">
 			<dc:date>
 				<xsl:value-of select="."/>
 			</dc:date>
-		</xsl:for-each> -->
-		<xsl:for-each select="mods:dateIssued[@keyDate='yes']">
+		</xsl:for-each>
+		<!-- NEED TO FIX THIS -->
+		<xsl:for-each select="child::mods:dateCreated[@point='start']">
 			<dc:date>
-				<xsl:value-of select="."/>
+				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
+			</dc:date>
+		</xsl:for-each>
+		<xsl:for-each select="child::mods:dateIssued[@point='start']">
+			<dc:date>
+				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
+			</dc:date>
+		</xsl:for-each>
+		<xsl:for-each select="child::mods:dateCaptured[@point='start']">
+			<dc:date>
+				<xsl:call-template name="dateRange"/>
+			</dc:date>
+		</xsl:for-each>
+		<xsl:for-each select="child::mods:dateOther[@point='start']">
+			<dc:date>
+				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
+			</dc:date>
+		</xsl:for-each>
+		<xsl:for-each select="child::mods:copyrightDate[@point='start']">
+			<dc:date>
+				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
 			</dc:date>
 		</xsl:for-each>
 
@@ -205,63 +199,55 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</xsl:for-each>
 	</xsl:template>
 
-	<xsl:template match="mods:genre">
-		<xsl:choose>
-			<xsl:when test="@authority='marcgt'">
+	<xsl:template match="mods:genre"> <!-- DONE -->
 				<dc:type>
 					<xsl:value-of select="."/>
 				</dc:type>
-				<xsl:for-each select="mods:typeOfResource">
-					<dc:type>
-						<xsl:value-of select="."/>
-					</dc:type>
-				</xsl:for-each>
-			</xsl:when>
-			<!-- <xsl:otherwise>
-				<dc:type>
-					<xsl:value-of select="."/>
-				</dc:type>
-			</xsl:otherwise> -->
-		</xsl:choose>
 	</xsl:template>
 
-	<xsl:template match="mods:typeOfResource">
-		<xsl:if test="@collection='yes'">
-			<dc:type>Collection</dc:type>
-		</xsl:if>
-		<xsl:if test=". ='software' and ../mods:genre='database'">
-			<dc:type>DataSet</dc:type>
-		</xsl:if>
-		<xsl:if test=".='software' and ../mods:genre='online system or service'">
-			<dc:type>Service</dc:type>
-		</xsl:if>
-		<xsl:if test=".='software'">
-			<dc:type>Software</dc:type>
-		</xsl:if>
-		<xsl:if test=".='cartographic material'">
-			<dc:type>Image</dc:type>
-		</xsl:if>
-		<xsl:if test=".='multimedia'">
-			<dc:type>InteractiveResource</dc:type>
-		</xsl:if>
-		<xsl:if test=".='moving image'">
-			<dc:type>MovingImage</dc:type>
-		</xsl:if>
-		<xsl:if test=".='three-dimensional object'">
-			<dc:type>PhysicalObject</dc:type>
-		</xsl:if>
-		<xsl:if test="starts-with(.,'sound recording')">
-			<dc:type>Sound</dc:type>
-		</xsl:if>
-		<xsl:if test=".='still image'">
-			<dc:type>StillImage</dc:type>
-		</xsl:if>
-		<xsl:if test=". ='text'">
-			<dc:type>Text</dc:type>
-		</xsl:if>
-		<xsl:if test=".='notated music'">
-			<dc:type>Text</dc:type>
-		</xsl:if>
+	<xsl:template match="mods:typeOfResource"> <!-- DONE -->
+		<xsl:choose>
+			<xsl:when test="@collection='yes'">
+				<dc:type>Collection</dc:type>
+			</xsl:when>
+			<xsl:when test=". ='software' and ../mods:genre='database'">
+				<dc:type>DataSet</dc:type>
+			</xsl:when>
+			<xsl:when test=".='software' and ../mods:genre='online system or service'">
+				<dc:type>Service</dc:type>
+			</xsl:when>
+			<xsl:when test=".='software'">
+				<dc:type>Software</dc:type>
+			</xsl:when>
+			<xsl:when test=".='cartographic material'">
+				<dc:type>Image</dc:type>
+			</xsl:when>
+			<xsl:when test=".='multimedia'">
+				<dc:type>InteractiveResource</dc:type>
+			</xsl:when>
+			<xsl:when test=".='moving image'">
+				<dc:type>MovingImage</dc:type>
+			</xsl:when>
+			<xsl:when test=".='three-dimensional object'">
+				<dc:type>PhysicalObject</dc:type>
+			</xsl:when>
+			<xsl:when test="starts-with(.,'sound recording')">
+				<dc:type>Sound</dc:type>
+			</xsl:when>
+			<xsl:when test=".='still image'">
+				<dc:type>StillImage</dc:type>
+			</xsl:when>
+			<xsl:when test=". ='text'">
+				<dc:type>Text</dc:type>
+			</xsl:when>
+			<xsl:when test=".='notated music'">
+				<dc:type>Text</dc:type>
+			</xsl:when>
+			<!-- Adding logic to handle other weird types we might run into -->
+			<xsl:otherwise>
+				<dc:type><xsl:value-of select="."/></dc:type>
+			</xsl:otherwise>
+		</xsl:choose>	
 	</xsl:template>
 
 	<xsl:template match="mods:physicalDescription">
@@ -370,6 +356,14 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</dc:rights>
 	</xsl:template>
 
+	<xsl:template match="mods:temporal[@point='start']  ">
+		<xsl:value-of select="."/>-<xsl:value-of select="../mods:temporal[@point='end']"/>
+	</xsl:template>
+
+	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
+		<xsl:value-of select="."/>
+	</xsl:template>
+
 	<xsl:template name="name">
 		<xsl:variable name="name">
 			<xsl:if test="mods:displayForm">
@@ -388,22 +382,12 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 		</xsl:variable>
 		<xsl:value-of select="normalize-space($name)"/>
 	</xsl:template>
-
-	<!-- <xsl:template match="mods:dateIssued[@point='start'] | mods:dateCreated[@point='start'] | mods:dateCaptured[@point='start'] | mods:dateOther[@point='start'] ">
-		<xsl:variable name="dateName" select="local-name()"/>
-			<dc:date>
-				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()=$dateName][@point='end']"/>
-			</dc:date>
-	</xsl:template> -->
-
-	<xsl:template match="mods:temporal[@point='start']  ">
-		<xsl:value-of select="."/>-<xsl:value-of select="../mods:temporal[@point='end']"/>
+	
+	<xsl:template name="dateRange" match="mods:dateIssued[@point='start'] | mods:dateCreated[@point='start'] | mods:dateCaptured[@point='start'] | mods:dateOther[@point='start'] | mods:copyrightDate[@point='start']">
+		<xsl:variable name="dateType" select="local-name()"/>
+		<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
 	</xsl:template>
-
-	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
-		<xsl:value-of select="."/>
-	</xsl:template>
-
+	
 	<!-- suppress all else:-->
 	<xsl:template match="*"/>
 
