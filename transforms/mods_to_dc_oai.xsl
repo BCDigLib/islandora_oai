@@ -159,39 +159,17 @@ are from the original transform.
 		</dc:description>
 	</xsl:template>
 
-	<xsl:template match="mods:originInfo">
+	<xsl:template match="mods:originInfo"> <!-- DONE -->
 		<xsl:for-each select="child::*[@keyDate='yes']">
 			<dc:date>
 				<xsl:value-of select="."/>
 			</dc:date>
 		</xsl:for-each>
-		<!-- NEED TO FIX THIS -->
-		<xsl:for-each select="child::mods:dateCreated[@point='start']">
+		<xsl:for-each select="child::*[@point='start']">
 			<dc:date>
-				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
+				<xsl:value-of select="."/>-<xsl:value-of select="following-sibling::*[local-name()][@point='end']"/>
 			</dc:date>
 		</xsl:for-each>
-		<xsl:for-each select="child::mods:dateIssued[@point='start']">
-			<dc:date>
-				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
-			</dc:date>
-		</xsl:for-each>
-		<xsl:for-each select="child::mods:dateCaptured[@point='start']">
-			<dc:date>
-				<xsl:call-template name="dateRange"/>
-			</dc:date>
-		</xsl:for-each>
-		<xsl:for-each select="child::mods:dateOther[@point='start']">
-			<dc:date>
-				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
-			</dc:date>
-		</xsl:for-each>
-		<xsl:for-each select="child::mods:copyrightDate[@point='start']">
-			<dc:date>
-				<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
-			</dc:date>
-		</xsl:for-each>
-
 		<xsl:for-each select="mods:publisher">
 			<dc:publisher>
 				<xsl:value-of select="."/>
