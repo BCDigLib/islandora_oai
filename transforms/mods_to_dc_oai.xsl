@@ -175,6 +175,16 @@ are from the original transform.
 				<xsl:value-of select="."/>
 			</dc:publisher>
 		</xsl:for-each>
+		<xsl:for-each select="mods:place/mods:placeTerm[@type='text']">
+			<dc:coverage>
+				<xsl:value-of select="."/>
+			</dc:coverage>
+		</xsl:for-each>
+		<xsl:for-each select="mods:issuance">
+			<dc:type>
+				<xsl:value-of select="."/>
+			</dc:type>
+		</xsl:for-each>
 	</xsl:template>
 
 	<xsl:template match="mods:genre"> <!-- DONE -->
@@ -294,7 +304,7 @@ are from the original transform.
 		</dc:identifier>
 	</xsl:template>
 
-	<xsl:template match="mods:language">
+	<xsl:template match="mods:language"> <!-- DONE -->
 		<dc:language>
 			<xsl:value-of select="normalize-space(mods:languageTerm[@type='text'])"/>
 		</dc:language>
