@@ -8,10 +8,24 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
-version 2.0 2017-12-13
+version 2.0 2018-01-03
 This stylesheet is the Boston College-specific MODS to DC transformation.
-It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms). The notes below
-are from the original transform.
+It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms).
+
+Outstanding questions:
+1) Is the roleTerm crosswalk correct? See https://goo.gl/7KC8aH.
+2) Should we use <mods:LocalCollectionName> somehow?
+3) Should we announce Handles in <dc:identifier> (they have cdone so with DOIs)? We currently only give the URL. LOC suggests giving the identifier type.
+	3a) Do we need to convert the Digitool identifier or can we drop it? I've added logic to drop it.
+	3b) We currently have both Handle and streaming link in the MODS for videos. These are both transformed into <dc:identifer>. Is this correct?
+4) This script suppresses series names in <mods:relatedItem>. Is this correct?
+5) For FPH videos, the transform takes the related item and gives title plus all identifiers for the related item in one string separated by two 
+   hyphens. Is this correct?
+6) I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct?
+7) Deleted <mods:mimeType> since BC does not use this. Is that correct?
+8) <mods:note> becomes <dc:description>, leading to things like <dc:description>Title supplied by cataloger</dc:description>. Is this OK?
+9) This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
+   For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct?
 -->
 
 	<xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
@@ -38,26 +52,28 @@ are from the original transform.
 		</xsl:choose>
 	</xsl:template>
 
-	<xsl:template match="mods:titleInfo"> <!-- DONE -->
+	<xsl:template match="mods:titleInfo">
 		<dc:title>
+			<xsl:if test="mods:nonSort and mods:nonSort != '' ">
 			<xsl:value-of select="mods:nonSort"/>
+			</xsl:if>
 			<xsl:value-of select="mods:title"/>
-			<xsl:if test="mods:subTitle">
+			<xsl:if test="mods:subTitle and mods:subTitle != '' ">
 				<xsl:text>: </xsl:text>
 				<xsl:value-of select="mods:subTitle"/>
 			</xsl:if>
-			<xsl:if test="mods:partNumber">
+			<xsl:if test="mods:partNumber and mods:partNumber !='' ">
 				<xsl:text>. </xsl:text>
 				<xsl:value-of select="mods:partNumber"/>
 			</xsl:if>
-			<xsl:if test="mods:partName">
+			<xsl:if test="mods:partName and mods:partName !=''">
 				<xsl:text>. </xsl:text>
 				<xsl:value-of select="mods:partName"/>
 			</xsl:if>
 		</dc:title>
 	</xsl:template>
 
-	<xsl:template match="mods:name"> <!-- DONE -->
+	<xsl:template match="mods:name">
 		<xsl:choose>
 			<!-- Create dc:creator -->
 			<xsl:when test="@usage='primary'">
@@ -72,7 +88,7 @@ are from the original transform.
 					<xsl:call-template name="name"/>
 				</dc:contributor>
 			</xsl:when>
-			<!-- Suppress publisher- and coverage-type MARC roleTerms includes: Setting, University place, Associated name, Issuing body, Originator, Presenter, Printer, Printer of plates, Printmaker, Provider, Publisher-->
+			<!-- Suppress publisher- and coverage-type MARC roleTerms-->
 			<xsl:when
 				test="mods:role/mods:roleTerm[@type='text']='Setting' or mods:role/mods:roleTerm[@type='text']='University place' or mods:role/mods:roleTerm[@type='text']='Associated name' or mods:role/mods:roleTerm[@type='text']='Issuing body' or mods:role/mods:roleTerm[@type='text']='Originator' or mods:role/mods:roleTerm[@type='text']='Presenter' or mods:role/mods:roleTerm[@type='text']='Printer' or mods:role/mods:roleTerm[@type='text']='Printer of plates' or mods:role/mods:roleTerm[@type='text']='Printmaker' or mods:role/mods:roleTerm[@type='text']='Provider' or mods:role/mods:roleTerm[@type='text']='Publisher'"/>			
 			<!-- Create dc:description that will handle all other roleTerms, whether MARC or not -->
@@ -159,7 +175,7 @@ are from the original transform.
 		</dc:description>
 	</xsl:template>
 
-	<xsl:template match="mods:originInfo"> <!-- DONE -->
+	<xsl:template match="mods:originInfo">
 		<xsl:for-each select="child::*[@keyDate='yes']">
 			<dc:date>
 				<xsl:value-of select="."/>
@@ -187,13 +203,13 @@ are from the original transform.
 		</xsl:for-each>
 	</xsl:template>
 
-	<xsl:template match="mods:genre"> <!-- DONE -->
+	<xsl:template match="mods:genre">
 				<dc:type>
 					<xsl:value-of select="."/>
 				</dc:type>
 	</xsl:template>
 
-	<xsl:template match="mods:typeOfResource"> <!-- DONE -->
+	<xsl:template match="mods:typeOfResource">
 		<xsl:choose>
 			<xsl:when test="@collection='yes'">
 				<dc:type>Collection</dc:type>
@@ -256,12 +272,6 @@ are from the original transform.
 		</xsl:if>
 	</xsl:template>
 
-	<xsl:template match="mods:mimeType">
-		<dc:format>
-			<xsl:value-of select="."/>
-		</dc:format>
-	</xsl:template>
-
 	<xsl:template match="mods:extension">
 		<xsl:for-each select="etdms:degree/etdms:name">
 			<dc:description>
@@ -288,6 +298,7 @@ are from the original transform.
 					<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
 				</dc:identifier>
 			</xsl:when>
+			<xsl:when test="contains('digitool', $type)" />
 			<xsl:otherwise>
 				<dc:identifier>
 					<xsl:value-of select="."/>
@@ -304,7 +315,7 @@ are from the original transform.
 		</dc:identifier>
 	</xsl:template>
 
-	<xsl:template match="mods:language"> <!-- DONE -->
+	<xsl:template match="mods:language">
 		<dc:language>
 			<xsl:value-of select="normalize-space(mods:languageTerm[@type='text'])"/>
 		</dc:language>
@@ -327,7 +338,28 @@ are from the original transform.
 			<xsl:otherwise>
 				<dc:relation>
 					<xsl:for-each
-						select="mods:titleInfo/mods:title | mods:identifier | mods:location/mods:url">
+						select="mods:titleInfo">
+						<xsl:if test="normalize-space(.)!= ''">
+							<xsl:if test="mods:nonSort and mods:nonSort != '' ">
+								<xsl:value-of select="mods:nonSort"/>
+							</xsl:if>
+							<xsl:value-of select="mods:title"/>
+							<xsl:if test="mods:subTitle and mods:subTitle != '' ">
+								<xsl:text>: </xsl:text>
+								<xsl:value-of select="mods:subTitle"/>
+							</xsl:if>
+							<xsl:if test="mods:partNumber and mods:partNumber !='' ">
+								<xsl:text>. </xsl:text>
+								<xsl:value-of select="mods:partNumber"/>
+							</xsl:if>
+							<xsl:if test="mods:partName and mods:partName !=''">
+								<xsl:text>. </xsl:text>
+								<xsl:value-of select="mods:partName"/>
+							</xsl:if>
+							<xsl:if test="position()=last()">--</xsl:if>
+						</xsl:if>
+					</xsl:for-each>
+					<xsl:for-each select="mods:identifier | mods:location/mods:url">
 						<xsl:if test="normalize-space(.)!= ''">
 							<xsl:value-of select="."/>
 							<xsl:if test="position()!=last()">--</xsl:if>
@@ -342,14 +374,6 @@ are from the original transform.
 		<dc:rights>
 			<xsl:value-of select="."/>
 		</dc:rights>
-	</xsl:template>
-
-	<xsl:template match="mods:temporal[@point='start']  ">
-		<xsl:value-of select="."/>-<xsl:value-of select="../mods:temporal[@point='end']"/>
-	</xsl:template>
-
-	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
-		<xsl:value-of select="."/>
 	</xsl:template>
 
 	<xsl:template name="name">
@@ -371,14 +395,7 @@ are from the original transform.
 		<xsl:value-of select="normalize-space($name)"/>
 	</xsl:template>
 	
-	<xsl:template name="dateRange" match="mods:dateIssued[@point='start'] | mods:dateCreated[@point='start'] | mods:dateCaptured[@point='start'] | mods:dateOther[@point='start'] | mods:copyrightDate[@point='start']">
-		<xsl:variable name="dateType" select="local-name()"/>
-		<xsl:value-of select="."/>-<xsl:value-of select="../*[local-name()][@point='end']"/>
-	</xsl:template>
-	
 	<!-- suppress all else:-->
 	<xsl:template match="*"/>
-
-
-
+	
 </xsl:stylesheet>
