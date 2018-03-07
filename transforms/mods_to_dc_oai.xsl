@@ -14,18 +14,18 @@ It is based on the Islandora OAI MODS to DC transformation (https://github.com/I
 
 Outstanding questions:
 1) Is the roleTerm crosswalk correct? See https://goo.gl/7KC8aH.
-2) Should we use <mods:LocalCollectionName> somehow?
-3) Should we announce Handles in <dc:identifier> (they have cdone so with DOIs)? We currently only give the URL. LOC suggests giving the identifier type.
-	3a) Do we need to convert the Digitool identifier or can we drop it? I've added logic to drop it.
-	3b) We currently have both Handle and streaming link in the MODS for videos. These are both transformed into <dc:identifer>. Is this correct?
-4) This script suppresses series names in <mods:relatedItem>. Is this correct?
+2) [RESOLVED] Should we use <mods:LocalCollectionName> somehow?
+3) [RESOLVED]Should we announce Handles in <dc:identifier> (they have done so with DOIs)? Not Handles, but certain other identifiers yes.
+	3a) [RESOLVED] Do we need to convert the Digitool identifier or can we drop it? I've added logic to drop it. Correct.
+	3b) We currently have both Handle and streaming link in the MODS for videos. These are both transformed into <dc:identifer>. Is this correct? No. ONLY handle.
+4) This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
 5) For FPH videos, the transform takes the related item and gives title plus all identifiers for the related item in one string separated by two 
-   hyphens. Is this correct?
-6) I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct?
-7) Deleted <mods:mimeType> since BC does not use this. Is that correct?
-8) <mods:note> becomes <dc:description>, leading to things like <dc:description>Title supplied by cataloger</dc:description>. Is this OK?
+   hyphens. Is this correct? No. Title only.
+6) I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct? Maybe. Email Betsy line numbers to see what's happening.
+7) [RESOLVED] Deleted <mods:mimeType> since BC does not use this. Is that correct? Yes.
+8) <mods:note> becomes <dc:description>, leading to things like <dc:description>Title supplied by cataloger</dc:description>. Is this OK? Yes.
 9) This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
-   For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct?
+   For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct? Yes. but stop from duplicating.
 -->
 
 	<xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
@@ -128,11 +128,11 @@ Outstanding questions:
 			</dc:subject>
 		</xsl:for-each>
 
-		<xsl:for-each select="mods:geographic">
+	<!--	<xsl:for-each select="mods:geographic">
 			<dc:coverage>
 				<xsl:value-of select="."/>
 			</dc:coverage>
-		</xsl:for-each>
+		</xsl:for-each> -->
 
 		<xsl:for-each select="mods:hierarchicalGeographic">
 			<dc:coverage>
@@ -293,7 +293,7 @@ Outstanding questions:
 	<xsl:template match="mods:identifier">
 		<xsl:variable name="type" select="translate(@type,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')"/>
 		<xsl:choose>
-			<xsl:when test="contains ('isbn issn uri doi lccn uri', $type)">
+			<xsl:when test="contains ('isbn issn lccn', $type)">
 				<dc:identifier>
 					<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
 				</dc:identifier>
@@ -321,7 +321,7 @@ Outstanding questions:
 		</dc:language>
 	</xsl:template>
 
-	<xsl:template match="mods:relatedItem[mods:titleInfo | mods:name | mods:identifier | mods:location]">
+	<xsl:template match="mods:relatedItem[mods:titleInfo | mods:name]">
 		<xsl:choose>
 			<xsl:when test="@type='original'">
 				<dc:source>
@@ -334,7 +334,7 @@ Outstanding questions:
 					</xsl:for-each>
 				</dc:source>
 			</xsl:when>
-			<xsl:when test="@type='series'"/>
+			<!-- <xsl:when test="@type='series'"/> -->
 			<xsl:otherwise>
 				<dc:relation>
 					<xsl:for-each
