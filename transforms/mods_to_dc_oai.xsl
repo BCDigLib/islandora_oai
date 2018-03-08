@@ -150,14 +150,14 @@ Outstanding questions:
 			</dc:coverage>
 		</xsl:for-each>
 
-		<xsl:if test="mods:temporal">
+		<!-- <xsl:if test="mods:temporal">
 			<dc:coverage>
 				<xsl:for-each select="mods:temporal">
 					<xsl:value-of select="."/>
 					<xsl:if test="position()!=last()">-</xsl:if>
 				</xsl:for-each>
 			</dc:coverage>
-		</xsl:if>
+		</xsl:if> -->
 
 		<xsl:if test="*[1][local-name()='topic'] and *[local-name()!='topic']">
 			<dc:subject>
