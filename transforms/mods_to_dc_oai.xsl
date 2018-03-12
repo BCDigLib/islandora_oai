@@ -21,10 +21,10 @@ Outstanding questions:
 4) [RESOLVED] This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
 5) [RESOLVED] For FPH videos, the transform takes the related item and gives title plus all identifiers for the related item in one string separated by two 
    hyphens. Is this correct? No. Title only.
-6) I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct? Maybe. Email Betsy line numbers to see what's happening.
+6) [RESOLVED] I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct? Maybe. Email Betsy line numbers to see what's happening.
 7) [RESOLVED] Deleted <mods:mimeType> since BC does not use this. Is that correct? Yes.
 8) [RESOLVED] <mods:note> becomes <dc:description>, leading to things like <dc:description>Title supplied by cataloger</dc:description>. Is this OK? Yes.
-9) This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
+9) [RESOLVED]This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
    For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct? Yes. but stop from duplicating.
 -->
 
@@ -108,7 +108,7 @@ Outstanding questions:
 
 	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:geographic | mods:hierarchicalGeographic | mods:cartographics | mods:temporal]">
 		<dc:subject>
-				<xsl:for-each select="../mods:subject/mods:topic">
+				<xsl:for-each select="mods:topic">
 					<xsl:value-of select="."/>
 					<xsl:if test="position()!=last()">--</xsl:if>
 				</xsl:for-each>
@@ -150,14 +150,14 @@ Outstanding questions:
 			</dc:coverage>
 		</xsl:for-each>
 
-		<!-- <xsl:if test="mods:temporal">
+		<xsl:if test="mods:temporal">
 			<dc:coverage>
 				<xsl:for-each select="mods:temporal">
 					<xsl:value-of select="."/>
 					<xsl:if test="position()!=last()">-</xsl:if>
 				</xsl:for-each>
 			</dc:coverage>
-		</xsl:if> -->
+		</xsl:if>
 
 		<xsl:if test="*[1][local-name()='topic'] and *[local-name()!='topic']">
 			<dc:subject>
