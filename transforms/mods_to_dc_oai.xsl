@@ -96,27 +96,25 @@ Outstanding questions:
 		</dc:subject>
 	</xsl:template>
 	
-<!-- FIX ALL OF THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:geographic | mods:hierarchicalGeographic | mods:cartographics | mods:temporal]">
-		<xsl:for-each select="mods:topic | mods:name | mods:occupation | mods:titleInfo/mods:title">
-		<dc:subject>
-			<xsl:for-each select="mods:topic">
-				<xsl:value-of select="."/>
-				<xsl:if test="position()!=last()">--</xsl:if>
-			</xsl:for-each>
-			<xsl:for-each select="mods:name">
-				<xsl:call-template name="name"/>
-				<xsl:if test="position()!=last()">--</xsl:if>
-			</xsl:for-each>
-			<xsl:for-each select="mods:occupation">
-				<xsl:value-of select="."/>
-				<xsl:if test="position()!=last()">--</xsl:if>
-			</xsl:for-each>
-		</dc:subject>
+		<xsl:for-each select="mods:topic">
+			<dc:subject>
+			<xsl:value-of select="."/>
+			</dc:subject>
+		</xsl:for-each>
+		<xsl:for-each select="mods:name">
+			<dc:subject>
+			<xsl:call-template name="name"/>
+			</dc:subject>
+		</xsl:for-each>
+		<xsl:for-each select="mods:occupation">
+			<dc:subject>
+			<xsl:value-of select="."/>
+			</dc:subject>
 		</xsl:for-each>
 		<xsl:for-each select="mods:titleInfo/mods:title">
 			<dc:subject>
-				<xsl:value-of select="mods:titleInfo/mods:title"/>
+				<xsl:value-of select="."/>
 			</dc:subject>
 		</xsl:for-each>
 	    <xsl:for-each select="mods:geographic">
