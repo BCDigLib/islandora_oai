@@ -8,22 +8,12 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
-version 2.1 2018-03-08
+version 2.2 2018-03-19
 This stylesheet is the Boston College-specific MODS to DC transformation.
 It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms).
 
 Outstanding questions:
-1) [RESOLVED]Is the roleTerm crosswalk correct? See https://goo.gl/7KC8aH. No. Fix.
-2) [RESOLVED] Should we use <mods:LocalCollectionName> somehow?
-3) [RESOLVED] Should we announce Handles in <dc:identifier> (they have done so with DOIs)? Not Handles, but certain other identifiers yes.
-	3a) [RESOLVED] Do we need to convert the Digitool identifier or can we drop it? I've added logic to drop it. Correct.
-	3b) [RESOLVED by removing mods:location transform altogether. Is this OK?] We currently have both Handle and streaming link in the MODS for videos. These are both transformed into <dc:identifer>. Is this correct? No. ONLY handle.
-4) [RESOLVED] This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
-5) [RESOLVED] For FPH videos, the transform takes the related item and gives title plus all identifiers for the related item in one string separated by two 
-   hyphens. Is this correct? No. Title only.
-6) [RESOLVED] I removed transforms for <mods:temporal> since we don't seem to use that in our MODS implementation. Is that correct? Maybe. Email Betsy line numbers to see what's happening.
-7) [RESOLVED] Deleted <mods:mimeType> since BC does not use this. Is that correct? Yes.
-8) [RESOLVED] <mods:note> becomes <dc:description>, leading to things like <dc:description>Title supplied by cataloger</dc:description>. Is this OK? Yes.
+4) [+ ITERATE OVER EACH MODS:RELATEDITEM] This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
 9) [RESOLVED]This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
    For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct? Yes. but stop from duplicating.
 -->
@@ -105,35 +95,35 @@ Outstanding questions:
 			<xsl:value-of select="."/>
 		</dc:subject>
 	</xsl:template>
-
+	
+<!-- FIX ALL OF THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:geographic | mods:hierarchicalGeographic | mods:cartographics | mods:temporal]">
+		<xsl:for-each select="mods:topic | mods:name | mods:occupation | mods:titleInfo/mods:title">
 		<dc:subject>
-				<xsl:for-each select="mods:topic">
-					<xsl:value-of select="."/>
-					<xsl:if test="position()!=last()">--</xsl:if>
-				</xsl:for-each>
-				
-				<xsl:for-each select="mods:occupation">
-					<xsl:value-of select="."/>
-					<xsl:if test="position()!=last()">--</xsl:if>
-				</xsl:for-each>
-				<xsl:for-each select="mods:name">
-					<xsl:call-template name="name"/>
-				</xsl:for-each>
-			</dc:subject>
-		
+			<xsl:for-each select="mods:topic">
+				<xsl:value-of select="."/>
+				<xsl:if test="position()!=last()">--</xsl:if>
+			</xsl:for-each>
+			<xsl:for-each select="mods:name">
+				<xsl:call-template name="name"/>
+				<xsl:if test="position()!=last()">--</xsl:if>
+			</xsl:for-each>
+			<xsl:for-each select="mods:occupation">
+				<xsl:value-of select="."/>
+				<xsl:if test="position()!=last()">--</xsl:if>
+			</xsl:for-each>
+		</dc:subject>
+		</xsl:for-each>
 		<xsl:for-each select="mods:titleInfo/mods:title">
 			<dc:subject>
 				<xsl:value-of select="mods:titleInfo/mods:title"/>
 			</dc:subject>
 		</xsl:for-each>
-
 	    <xsl:for-each select="mods:geographic">
 			<dc:coverage>
 				<xsl:value-of select="."/>
 			</dc:coverage>
 		</xsl:for-each>
-
 		<xsl:for-each select="mods:hierarchicalGeographic">
 			<dc:coverage>
 				<xsl:for-each
@@ -143,13 +133,11 @@ Outstanding questions:
 				</xsl:for-each>
 			</dc:coverage>
 		</xsl:for-each>
-
 		<xsl:for-each select="mods:cartographics/*">
 			<dc:coverage>
 				<xsl:value-of select="."/>
 			</dc:coverage>
 		</xsl:for-each>
-
 		<xsl:if test="mods:temporal">
 			<dc:coverage>
 				<xsl:for-each select="mods:temporal">
@@ -157,15 +145,6 @@ Outstanding questions:
 					<xsl:if test="position()!=last()">-</xsl:if>
 				</xsl:for-each>
 			</dc:coverage>
-		</xsl:if>
-
-		<xsl:if test="*[1][local-name()='topic'] and *[local-name()!='topic']">
-			<dc:subject>
-				<xsl:for-each select="*[local-name()!='cartographics' and local-name()!='geographicCode' and local-name()!='hierarchicalGeographic'] ">
-					<xsl:value-of select="."/>
-					<xsl:if test="position()!=last()">--</xsl:if>
-				</xsl:for-each>
-			</dc:subject>
 		</xsl:if>
 	</xsl:template>
 
@@ -191,11 +170,13 @@ Outstanding questions:
 				<xsl:value-of select="."/>
 			</dc:publisher>
 		</xsl:for-each>
+		<!--
 		<xsl:for-each select="mods:place/mods:placeTerm[@type='text']">
 			<dc:coverage>
 				<xsl:value-of select="."/>
 			</dc:coverage>
 		</xsl:for-each>
+		-->
 		<xsl:for-each select="mods:issuance">
 			<dc:type>
 				<xsl:value-of select="."/>
@@ -307,14 +288,6 @@ Outstanding questions:
 		</xsl:choose>
 	</xsl:template>
 
-	<xsl:template match="mods:location">
-		<!-- <dc:identifier>
-			<xsl:for-each select="mods:url">
-				<xsl:value-of select="."/>
-			</xsl:for-each>
-		</dc:identifier> -->
-	</xsl:template>
-
 	<xsl:template match="mods:language">
 		<dc:language>
 			<xsl:value-of select="normalize-space(mods:languageTerm[@type='text'])"/>
@@ -371,7 +344,7 @@ Outstanding questions:
 								<xsl:text>. </xsl:text>
 								<xsl:value-of select="mods:partName"/>
 							</xsl:if>
-							<xsl:if test="position()!=last()">--</xsl:if>
+							<xsl:if test="position()!=last()">" -- "</xsl:if>
 						</xsl:if>
 					</xsl:for-each>
 				</dc:relation>
