@@ -8,13 +8,13 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
-version 2.2 2018-03-19
+version 2.3 2018-03-22
 This stylesheet is the Boston College-specific MODS to DC transformation.
 It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms).
 
 Outstanding questions:
 4) [+ ITERATE OVER EACH MODS:RELATEDITEM] This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
-9) [RESOLVED]This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
+9) [+ RESOLVED]This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
    For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct? Yes. but stop from duplicating.
 -->
 
@@ -96,54 +96,66 @@ Outstanding questions:
 		</dc:subject>
 	</xsl:template>
 	
-	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:geographic | mods:hierarchicalGeographic | mods:cartographics | mods:temporal]">
-		<xsl:for-each select="mods:topic">
-			<dc:subject>
-			<xsl:value-of select="."/>
-			</dc:subject>
-		</xsl:for-each>
-		<xsl:for-each select="mods:name">
-			<dc:subject>
-			<xsl:call-template name="name"/>
-			</dc:subject>
-		</xsl:for-each>
-		<xsl:for-each select="mods:occupation">
-			<dc:subject>
-			<xsl:value-of select="."/>
-			</dc:subject>
-		</xsl:for-each>
-		<xsl:for-each select="mods:titleInfo/mods:title">
-			<dc:subject>
-				<xsl:value-of select="."/>
-			</dc:subject>
-		</xsl:for-each>
-	    <xsl:for-each select="mods:geographic">
-			<dc:coverage>
-				<xsl:value-of select="."/>
-			</dc:coverage>
-		</xsl:for-each>
-		<xsl:for-each select="mods:hierarchicalGeographic">
-			<dc:coverage>
-				<xsl:for-each
-					select="mods:continent|mods:country|mods:provence|mods:region|mods:state|mods:territory|mods:county|mods:city|mods:island|mods:area">
-					<xsl:value-of select="."/>
-					<xsl:if test="position()!=last()">--</xsl:if>
+	<xsl:template match="mods:subject">
+		<xsl:choose>
+			<xsl:when test="@authority">
+				<dc:subject>
+					<xsl:for-each select="descendant::text()">
+						<xsl:value-of select="."/>
+						<xsl:if test="position()!=last()"> -- </xsl:if>
+					</xsl:for-each>
+				</dc:subject>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:for-each select="./mods:topic">
+					<dc:subject>
+						<xsl:value-of select="."/>
+					</dc:subject>
 				</xsl:for-each>
-			</dc:coverage>
-		</xsl:for-each>
-		<xsl:for-each select="mods:cartographics/*">
-			<dc:coverage>
-				<xsl:value-of select="."/>
-			</dc:coverage>
-		</xsl:for-each>
-		<xsl:if test="mods:temporal">
-			<dc:coverage>
-				<xsl:for-each select="mods:temporal">
-					<xsl:value-of select="."/>
-					<xsl:if test="position()!=last()">-</xsl:if>
+				<xsl:for-each select="./mods:name">
+					<dc:subject>
+						<xsl:call-template name="name"/>
+					</dc:subject>
 				</xsl:for-each>
-			</dc:coverage>
-		</xsl:if>
+				<xsl:for-each select="./mods:occupation">
+					<dc:subject>
+						<xsl:value-of select="."/>
+					</dc:subject>
+				</xsl:for-each>
+				<xsl:for-each select="./mods:titleInfo/mods:title">
+					<dc:subject>
+						<xsl:value-of select="."/>
+					</dc:subject>
+				</xsl:for-each>
+				<xsl:for-each select="./mods:geographic">
+					<dc:coverage>
+						<xsl:value-of select="."/>
+					</dc:coverage>
+				</xsl:for-each>
+				<xsl:for-each select="./mods:hierarchicalGeographic">
+					<dc:coverage>
+						<xsl:for-each
+							select="mods:continent|mods:country|mods:provence|mods:region|mods:state|mods:territory|mods:county|mods:city|mods:island|mods:area">
+							<xsl:value-of select="."/>
+							<xsl:if test="position()!=last()"> -- </xsl:if>
+						</xsl:for-each>
+					</dc:coverage>
+				</xsl:for-each>
+				<xsl:for-each select="./mods:cartographics/*">
+					<dc:coverage>
+						<xsl:value-of select="."/>
+					</dc:coverage>
+				</xsl:for-each>
+				<xsl:if test="./mods:temporal">
+					<dc:coverage>
+						<xsl:for-each select="mods:temporal">
+							<xsl:value-of select="."/>
+							<xsl:if test="position()!=last()">-</xsl:if>
+						</xsl:for-each>
+					</dc:coverage>
+				</xsl:if>
+			</xsl:otherwise>
+		</xsl:choose>
 	</xsl:template>
 
 	<xsl:template match="mods:abstract | mods:tableOfContents | mods:note">
@@ -168,13 +180,6 @@ Outstanding questions:
 				<xsl:value-of select="."/>
 			</dc:publisher>
 		</xsl:for-each>
-		<!--
-		<xsl:for-each select="mods:place/mods:placeTerm[@type='text']">
-			<dc:coverage>
-				<xsl:value-of select="."/>
-			</dc:coverage>
-		</xsl:for-each>
-		-->
 		<xsl:for-each select="mods:issuance">
 			<dc:type>
 				<xsl:value-of select="."/>
@@ -226,7 +231,6 @@ Outstanding questions:
 			<xsl:when test=".='notated music'">
 				<dc:type>Text</dc:type>
 			</xsl:when>
-			<!-- Adding logic to handle other weird types we might run into -->
 			<xsl:otherwise>
 				<dc:type><xsl:value-of select="."/></dc:type>
 			</xsl:otherwise>
@@ -317,7 +321,7 @@ Outstanding questions:
 								<xsl:text>: </xsl:text>
 								<xsl:value-of select="mods:subTitle"/>
 							</xsl:if>
-							<xsl:if test="position()!=last()">--</xsl:if>
+							<xsl:if test="position()!=last()"> -- </xsl:if>
 						</xsl:if>
 					</xsl:for-each>
 				</dc:relation>
@@ -342,7 +346,7 @@ Outstanding questions:
 								<xsl:text>. </xsl:text>
 								<xsl:value-of select="mods:partName"/>
 							</xsl:if>
-							<xsl:if test="position()!=last()">" -- "</xsl:if>
+							<xsl:if test="position()!=last()"> -- </xsl:if>
 						</xsl:if>
 					</xsl:for-each>
 				</dc:relation>
@@ -375,7 +379,7 @@ Outstanding questions:
 		<xsl:value-of select="normalize-space($name)"/>
 	</xsl:template>
 	
-	<!-- suppress all else:-->
+	<!-- suppress all else -->
 	<xsl:template match="*"/>
 	
 </xsl:stylesheet>
