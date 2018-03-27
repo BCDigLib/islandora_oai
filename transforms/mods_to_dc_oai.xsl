@@ -8,14 +8,11 @@
 	xmlns:etdms="http://www.ndltd.org/standards/metadata/etdms/1.0/">
 
 <!--
-version 2.3 2018-03-22
+version 2.4 2018-03-27
 This stylesheet is the Boston College-specific MODS to DC transformation.
 It is based on the Islandora OAI MODS to DC transformation (https://github.com/Islandora/islandora_oai/tree/7.x/transforms).
-
-Outstanding questions:
-4) [+ ITERATE OVER EACH MODS:RELATEDITEM] This script suppresses series names in <mods:relatedItem>. Is this correct? No. Also, fix dashes after series title.
-9) [+ RESOLVED]This transform takes each <mods:subject/mods:[element_name]> and groups them together into one <dc:subject> separated by 2 hyphens. 
-   For example, all <mods:topic> is grouped and separated by 2 hyphens, all <mods:geographic> is grouped, etc. Is this correct? Yes. but stop from duplicating.
+We have changed many of the transforms to meet the specific needs of the BC MODS implementation
+If you have questions, please email John O'Connor.
 -->
 
 	<xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
