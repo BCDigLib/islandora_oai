@@ -46,12 +46,12 @@ function islandora_oai_install() {
 
   db_insert('islandora_oai_metadata_formats')
     ->fields(array(
-      'name' => 'marc21',
-      'metadata_prefix' => 'marc21',
-      'oai2_schema' => 'http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd',
-      'metadata_namespace' => 'http://www.loc.gov/MARC21/slim',
-      'record_prefix' => 'marc',
-      'record_namespace' => 'http://www.loc.gov/MARC21/slim',
+      'name' => 'qdc',
+      'metadata_prefix' => 'oai_qdc',
+      'oai2_schema' => 'http://dublincore.org/schemas/xmls/qdc/2008/02/11/qualifieddc.xsd',
+      'metadata_namespace' => 'http://purl.org/dc/terms/',
+      'record_prefix' => 'dc',
+      'record_namespace' => 'http://purl.org/dc/terms/',
     ))
     ->execute();
 }
@@ -243,5 +243,21 @@ function islandora_oai_update_7102() {
     ))
     ->condition('name', 'oai_etdms')
     ->condition('metadata_prefix', 'oai_etdms')
+    ->execute();
+}
+
+/**
+ * Add support for QDC.
+ */
+function islandora_oai_update_7103(&$sandbox) {
+  db_insert('islandora_oai_metadata_formats')
+    ->fields(array(
+      'name' => 'qdc',
+      'metadata_prefix' => 'oai_qdc',
+      'oai2_schema' => 'http://dublincore.org/schemas/xmls/qdc/2008/02/11/qualifieddc.xsd',
+      'metadata_namespace' => 'http://purl.org/dc/terms/',
+      'record_prefix' => 'dc',
+      'record_namespace' => 'http://purl.org/dc/terms/',
+    ))
     ->execute();
 }
